@@ -38,6 +38,7 @@ namespace ZR.Admin.WebApi.Extensions
                 c.SwaggerEndpoint("sys/swagger.json", "系统管理");
                 c.SwaggerEndpoint("article/swagger.json", "文章管理");
                 c.SwaggerEndpoint("v1/swagger.json", "business");
+                c.SwaggerEndpoint("shopping/swagger.json", "商城管理");
                 c.DocExpansion(DocExpansion.None); //->修改界面打开时自动折叠
             });
         }
@@ -63,6 +64,12 @@ namespace ZR.Admin.WebApi.Extensions
                     Description = "文章管理",
                     Contact = new OpenApiContact { Name = "ZRAdmin doc", Url = new Uri("https://www.izhaorui.cn/doc") }
                 });
+                c.SwaggerDoc("shopping", new OpenApiInfo
+                {
+                    Title = "ZrAdmin.NET Api",
+                    Version = "v1",
+                    Description = "商城管理",
+                });
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = "ZrAdmin.NET Api",
@@ -78,6 +85,7 @@ namespace ZR.Admin.WebApi.Extensions
                     c.IncludeXmlComments(Path.Combine(baseDir, "ZR.ServiceCore.xml"), true);
                     c.IncludeXmlComments(Path.Combine(baseDir, "ZR.Service.xml"), true);
                     c.IncludeXmlComments(Path.Combine(baseDir, "ZR.Admin.WebApi.xml"), true);
+                    c.IncludeXmlComments(Path.Combine(baseDir, "ZR.Mall.xml"), true);
 
                     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                     var xmlPath = Path.Combine(baseDir, xmlFile);

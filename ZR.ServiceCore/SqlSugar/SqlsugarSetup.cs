@@ -105,7 +105,7 @@ namespace ZR.ServiceCore.SqlSugar
             {
                 //var pars = db.Utilities.SerializeObject(((SugarParameter[])ex.Parametres).ToDictionary(it => it.ParameterName, it => it.Value));
 
-                string sql = "【错误SQL】" + UtilMethods.GetSqlString(config.DbType, ex.Sql, (SugarParameter[])ex.Parametres) + "\r\n";
+                string sql = $"【错误SQL,db={configId}】{UtilMethods.GetSqlString(config.DbType, ex.Sql, (SugarParameter[])ex.Parametres)}\r\n";
                 logger.Error(ex, $"{sql}\r\n{ex.Message}\r\n{ex.StackTrace}");
             };
             db.GetConnectionScope(configId).Aop.DataExecuting = (oldValue, entiyInfo) =>
@@ -147,7 +147,7 @@ namespace ZR.ServiceCore.SqlSugar
                         log.AfterData = afterPars;
                     }
                     //logger.WithProperty("title", data).Info(pars);
-                    db.GetConnectionScope(configId)
+                    db.GetConnectionScopeWithAttr<SqlDiffLog>()
                     .Insertable(log)
                     .ExecuteReturnSnowflakeId();
                 }

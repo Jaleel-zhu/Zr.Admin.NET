@@ -12,6 +12,7 @@ using ZR.Common.DynamicApiSimple.Extens;
 using ZR.Infrastructure.WebExtensions;
 using ZR.ServiceCore.Signalr;
 using ZR.ServiceCore.SqlSugar;
+using ZR.Mall;
 
 var builder = WebApplication.CreateBuilder(args);
 // NLog: Setup NLog for Dependency injection
@@ -93,6 +94,7 @@ InternalApp.Configuration = builder.Configuration;
 InternalApp.WebHostEnvironment = app.Environment;
 //初始化db
 builder.Services.AddDb(app.Environment);
+builder.Services.InitDb(app.Environment);
 var workId = builder.Configuration["workId"].ParseToInt();
 if (app.Environment.IsDevelopment())
 {
