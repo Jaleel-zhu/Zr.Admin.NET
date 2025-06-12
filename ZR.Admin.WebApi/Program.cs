@@ -156,8 +156,12 @@ if (builder.Environment.IsProduction())
 //初始化字典数据
 app.UseInit();
 
-//使用swagger
-app.UseSwagger();
+//swagger 只在开发环境中使用
+if (builder.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+}
+
 //启用客户端IP限制速率
 app.UseIpRateLimiting();
 app.UseRateLimiter();
