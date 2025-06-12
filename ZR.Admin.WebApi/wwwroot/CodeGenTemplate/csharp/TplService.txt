@@ -177,6 +177,8 @@ $if(replaceDto.ShowBtnExport)
         /// <returns></returns>
         public PagedInfo<${replaceDto.ModelTypeName}Dto> ExportList(${replaceDto.ModelTypeName}QueryDto parm)
         {
+            parm.PageNum = 1;
+            parm.PageSize = 100000;
             var predicate = QueryExp(parm);
 
             var response = Queryable()

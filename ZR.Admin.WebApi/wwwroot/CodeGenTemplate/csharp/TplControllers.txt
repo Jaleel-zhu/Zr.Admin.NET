@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using ${options.DtosNamespace}.${options.SubNamespace}.Dto;
 using ${options.ModelsNamespace}.${options.SubNamespace};
 using ${options.IServicsNamespace}.${options.SubNamespace}.I${options.SubNamespace}Service;
-using ${options.ApiControllerNamespace}.Filters;
 $if(replaceDto.ShowBtnImport)
 using MiniExcelLibs;
 $end
@@ -130,8 +129,6 @@ $if(replaceDto.ShowBtnExport)
         [ActionPermissionFilter(Permission = "${replaceDto.PermissionPrefix}:export")]
         public IActionResult Export([FromQuery] ${replaceDto.ModelTypeName}QueryDto parm)
         {
-            parm.PageNum = 1;
-            parm.PageSize = 100000;
             var list = _${replaceDto.ModelTypeName}Service.ExportList(parm).Result;
             if (list == null || list.Count <= 0)
             {
