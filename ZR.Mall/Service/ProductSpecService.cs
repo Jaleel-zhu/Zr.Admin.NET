@@ -39,11 +39,37 @@ namespace ZR.Mall.Service
         /// <summary>
         /// 修改商品规格
         /// </summary>
-        /// <param name="model"></param>
+        /// <param name="productId"></param>
+        /// <param name="newSpecs"></param>
         /// <returns></returns>
-        public long UpdateShoppingProductspec(ProductSpec model)
+        public long UpdateProductSpec(long productId, List<ProductSpec> newSpecs)
         {
-            return Update(model, true);
+            var result = 0;
+            // 获取数据库中旧数据
+            var oldSpecs = GetList(f => f.ProductId == productId);
+            // 提取 ID 列表
+            var newIds = newSpecs.Where(x => x.Id > 0).Select(x => x.Id).ToList();
+            var oldIds = oldSpecs.Select(x => x.Id).ToList();
+            // ➤ 更新：有 ID 且在数据库中
+            var updateSpecs = newSpecs.Where(x => x.Id > 0 && oldIds.Contains(x.Id)).ToList();
+            foreach (var spec in updateSpecs)
+            {
+                result = Update(spec, true, "数据修改"); // 可带日志记录
+            }
+            // ➤ 插入：没有 ID 的新增项
+            var insertSpecs = newSpecs.Where(x => x.Id <= 0).ToList();
+            if (insertSpecs.Count != 0)
+                InsertRange(insertSpecs);
+
+            // ➤ 删除：数据库有但前端没传的
+            var deleteIds = oldSpecs
+                .Where(x => !newIds.Contains(x.Id)) // 不在新 ID 列表中
+                .Select(x => x.Id)
+                .ToList();
+
+            if (deleteIds.Count != 0)
+                Delete(deleteIds);
+            return result;
         }
 
         /// <summary>

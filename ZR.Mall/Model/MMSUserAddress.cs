@@ -39,5 +39,9 @@
         /// 是否默认1.是 0.否
         /// </summary>
         public int IsDefault { get; set; }
+        /// <summary>
+        /// 添加时间
+        /// </summary>
+        public DateTime AddTime { get; set; }
     }
 }

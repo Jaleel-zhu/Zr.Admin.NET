@@ -123,11 +123,12 @@ namespace ZR.Mall.Service
                 var allSkuIds = skus.Select(f => f.SkuId).ToList();
 
                 // 删除旧的规格
-                specService.DeleteSpecByProductId(model.ProductId);
+                //specService.DeleteSpecByProductId(model.ProductId);
                 // 插入新的规格
                 dto.Spec.ForEach(f => f.ProductId = model.ProductId);
-                specService.InsertRange(dto.Spec.Adapt<List<ProductSpec>>());
-
+                //specService.InsertRange(dto.Spec.Adapt<List<ProductSpec>>());
+                specService.UpdateProductSpec(model.ProductId, dto.Spec.Adapt<List<ProductSpec>>());
+                
                 var insertSkus = model.Skus.Where(f => !skus.Any(s => s.SkuId == f.SkuId)).ToList();
                 var updateSkus = model.Skus.Where(f => skus.Any(s => s.SkuId == f.SkuId)).ToList();
                 var deleteSkus = skus.Where(f => !model.Skus.Any(s => s.SkuId == f.SkuId)).ToList();
@@ -159,11 +160,11 @@ namespace ZR.Mall.Service
                     skusService.Update(item, true, "修改商品sku");
                 }
             });
-            if (result.IsSuccess)
+            if (!result.IsSuccess)
             {
-                return model;
-            };
-            throw new CustomException("修改失败");
+                throw new CustomException(ResultCode.CUSTOM_ERROR, "修改失败", result.ErrorMessage);
+            }
+            return model;
         }
 
         private string UpdateCombination(Skus item)
@@ -192,7 +193,8 @@ namespace ZR.Mall.Service
                 t.Introduce,
                 t.Unit,
                 t.OriginalPrice,
-                t.VideoUrl
+                t.VideoUrl,
+                t.DetailsHtml
             }, true);
 
             return result;

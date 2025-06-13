@@ -9,14 +9,14 @@ using ZR.Mall.Service.IService;
 namespace ZR.Mall.Controllers
 {
     /// <summary>
-    /// 文章目录Controller
+    /// 商品分类Controller
     /// </summary>
     [Route("shopping/category")]
     [ApiExplorerSettings(GroupName = "shopping")]
     public class CategoryController : BaseController
     {
         /// <summary>
-        /// 文章目录接口
+        /// 商品分类接口
         /// </summary>
         private readonly ICategoryService _categoryService;
 
@@ -26,7 +26,7 @@ namespace ZR.Mall.Controllers
         }
 
         /// <summary>
-        /// 查询文章目录列表
+        /// 查询商品分类列表
         /// </summary>
         /// <param name="parm"></param>
         /// <returns></returns>
@@ -39,7 +39,7 @@ namespace ZR.Mall.Controllers
         }
 
         /// <summary>
-        /// 查询文章目录列表树
+        /// 查询商品分类列表树
         /// </summary>
         /// <param name="parm"></param>
         /// <returns></returns>

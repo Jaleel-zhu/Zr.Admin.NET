@@ -61,8 +61,8 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Name = "商家备注")]
         public string MerchantNote { get; set; }
 
-        [ExcelColumn(Name = "确认收货状态")]
-        public int? ConfirmStatus { get; set; }
+        [ExcelColumn(Name = "快递状态")]
+        public DeliveryStatusEnum DeliveryStatus { get; set; }
 
         [ExcelColumn(Name = "物流公司")]
         public string DeliveryCompany { get; set; }

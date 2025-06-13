@@ -10,7 +10,7 @@ namespace ZR.Mall.Service.IService
     {
         PagedInfo<ProductSpecDto> GetList(ShoppingProductSpecQueryDto parm);
         ProductSpec AddShoppingProductspec(ProductSpec parm);
-        long UpdateShoppingProductspec(ProductSpec parm);
+        long UpdateProductSpec(long productId, List<ProductSpec> parm);
         long DeleteSpecByProductId(long productId);
     }
 }
