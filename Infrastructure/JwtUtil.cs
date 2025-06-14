@@ -26,11 +26,10 @@ namespace Infrastructure
         {
             string token = httpContext.GetToken();
 
-            if (!string.IsNullOrEmpty(token))
-            {
-                return ValidateJwtToken(ParseToken(token));
-            }
-            return null;
+            if (string.IsNullOrEmpty(token)) return null;
+
+            var tokenModel = ValidateJwtToken(ParseToken(token));
+            return tokenModel;
         }
 
         /// <summary>
@@ -161,10 +160,16 @@ namespace Infrastructure
                     new(ClaimTypes.GroupSid, user.DeptId.ToString()),
                     new(ClaimTypes.UserData, JsonConvert.SerializeObject(user)),
                 };
-            if(user?.TenantId != null)
+            if (user?.TenantId != null)
             {
                 //租户ID
                 claims.Add(new(ClaimTypes.PrimaryGroupSid, user.TenantId));
+            }
+            // 只挑选敏感权限
+            var sensitivePerms = user.Permissions?.Where(p => p.StartsWith("p:")).ToList();
+            if (sensitivePerms != null && sensitivePerms.Count > 0)
+            {
+                claims.Add(new Claim("sensitivePerms", string.Join(',', sensitivePerms)));
             }
             return claims;
         }

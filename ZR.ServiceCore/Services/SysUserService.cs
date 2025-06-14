@@ -1,7 +1,11 @@
 using Infrastructure;
 using Infrastructure.Attribute;
+using Mapster;
+using Microsoft.AspNetCore.Http;
 using System.Collections;
 using ZR.Common;
+using ZR.Infrastructure.Constant;
+using ZR.Infrastructure.Helper;
 using ZR.Infrastructure.IPTools;
 using ZR.Model;
 using ZR.Model.System;
@@ -37,7 +41,7 @@ namespace ZR.ServiceCore.Services
         /// 根据条件分页查询用户列表
         /// </summary>
         /// <returns></returns>
-        public PagedInfo<SysUser> SelectUserList(SysUserQueryDto user, PagerInfo pager)
+        public PagedInfo<SysUserDto> SelectUserList(SysUserQueryDto user, PagerInfo pager)
         {
             var exp = Expressionable.Create<SysUser>();
             exp.AndIF(!string.IsNullOrEmpty(user.UserName), u => u.UserName.Contains(user.UserName));
@@ -57,13 +61,25 @@ namespace ZR.ServiceCore.Services
             var query = Queryable()
                 .LeftJoin<SysDept>((u, dept) => u.DeptId == dept.DeptId)
                 .Where(exp.ToExpression())
-                .Select((u, dept) => new SysUser
+                .Select((u, dept) => new SysUserDto
                 {
                     UserId = u.UserId.SelectAll(),
                     DeptName = dept.DeptName,
                 });
+            var list = query.ToPage(pager);
+            foreach (var item in list.Result)
+            {
+                if (!HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealPhone))
+                {
+                    item.Phonenumber = MaskUtil.MaskPhone(item.Phonenumber);
+                }
+                if (!HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewEmail))
+                {
+                    item.Email = MaskUtil.MaskPhone(item.Email);
+                }
+            }
 
-            return query.ToPage(pager);
+            return list;
         }
 
         /// <summary>
@@ -71,14 +87,26 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="userId"></param>
         /// <returns></returns>
-        public SysUser SelectUserById(long userId)
+        public SysUserDto SelectUserById(long userId)
         {
-            var user = Queryable().Filter(null, true).WithCache(60 * 5)
-                .Where(f => f.UserId == userId && f.DelFlag == 0).First();
+            var userModel = Queryable()
+                .Filter(null, true).WithCache(60 * 5)
+                .Where(f => f.UserId == userId && f.DelFlag == 0)
+                .First();
+            var user = userModel.Adapt<SysUserDto>();
             if (user != null && user.UserId > 0)
             {
                 user.Roles = RoleService.SelectUserRoleListByUserId(userId);
                 user.RoleIds = user.Roles.Select(x => x.RoleId).ToArray();
+
+                if (!HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealPhone))
+                {
+                    user.Phonenumber = MaskUtil.MaskPhone(userModel.Phonenumber);
+                }
+                if (!HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewEmail))
+                {
+                    user.Email = MaskUtil.MaskPhone(user.Email);
+                }
             }
             return user;
         }
@@ -107,7 +135,7 @@ namespace ZR.ServiceCore.Services
         {
             var list = GetList(it => it.Phonenumber == phoneNum);
             var temp = list.Select(x => x.UserId).ToList();
-            return list.Count > 0 ?  temp : new List<long>();
+            return list.Count > 0 ? temp : [];
         }
 
         /// <summary>
@@ -118,7 +146,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public int ChangePhoneNum(long userid, string phoneNum)
         {
-           return Update(new SysUser() { Phonenumber = phoneNum }, it => new { it.Phonenumber }, f => f.UserId == userid);
+            return Update(new SysUser() { Phonenumber = phoneNum }, it => new { it.Phonenumber }, f => f.UserId == userid);
         }
 
         /// <summary>
@@ -132,7 +160,7 @@ namespace ZR.ServiceCore.Services
             {
                 sysUser.UserId = Insertable(sysUser).ExecuteReturnIdentity();
                 //新增用户角色信息
-                UserRoleService.InsertUserRole(sysUser);
+                UserRoleService.InsertUserRole(sysUser.RoleIds, sysUser.UserId);
                 //新增用户岗位信息
                 UserPostService.InsertUserPost(sysUser);
             });
@@ -146,13 +174,14 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 修改用户信息
         /// </summary>
-        /// <param name="user"></param>
+        /// <param name="dto"></param>
         /// <returns></returns>
-        public int UpdateUser(SysUser user)
+        public int UpdateUser(SysUserDto dto)
         {
+            SysUser user = dto.Adapt<SysUser>();
             var roleIds = RoleService.SelectUserRoles(user.UserId);
-            var diffArr = roleIds.Where(c => !((IList)user.RoleIds).Contains(c)).ToArray();
-            var diffArr2 = user.RoleIds.Where(c => !((IList)roleIds).Contains(c)).ToArray();
+            var diffArr = roleIds.Where(c => !((IList)dto.RoleIds).Contains(c)).ToArray();
+            var diffArr2 = dto.RoleIds.Where(c => !((IList)roleIds).Contains(c)).ToArray();
             var result = UseTran(() =>
             {
                 if (diffArr.Length > 0 || diffArr2.Length > 0)
@@ -160,7 +189,7 @@ namespace ZR.ServiceCore.Services
                     //删除用户与角色关联
                     UserRoleService.DeleteUserRoleByUserId((int)user.UserId);
                     //新增用户与角色关联
-                    UserRoleService.InsertUserRole(user);
+                    UserRoleService.InsertUserRole(dto.RoleIds, dto.UserId);
                 }
                 // 删除用户与岗位关联
                 UserPostService.Delete(user.UserId);

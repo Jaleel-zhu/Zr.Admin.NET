@@ -1,6 +1,6 @@
 ﻿using Infrastructure;
 using Infrastructure.Attribute;
-using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.ServiceCore.Services
 {
@@ -26,7 +26,7 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="user">用户信息</param>
         /// <returns>角色权限信息</returns>
-        public List<string> GetRolePermission(SysUser user)
+        public List<string> GetRolePermission(SysUserDto user)
         {
             List<string> roles = new();
             // 管理员拥有所有权限
@@ -46,7 +46,7 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="user">用户信息</param>
         /// <returns>菜单权限信息</returns>
-        public List<string> GetMenuPermission(SysUser user)
+        public List<string> GetMenuPermission(SysUserDto user)
         {
             List<string> perms = new();
             // 管理员拥有所有权限

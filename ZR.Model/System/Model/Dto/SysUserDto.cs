@@ -29,17 +29,72 @@
         /// 部门Id
         /// </summary>
         public long DeptId { get; set; }
+
+        public string WelcomeContent { get; set; }
+
+        #region 表额外字段
+
+        [SugarColumn(IsIgnore = true)]
+        public bool IsAdmin
+        {
+            get
+            {
+                return UserId == 1;
+            }
+        }
+        /// <summary>
+        /// 拥有角色个数
+        /// </summary>
+        //[SugarColumn(IsIgnore = true)]
+        //public int RoleNum { get; set; }
+        [SugarColumn(IsIgnore = true)]
+        public string DeptName { get; set; }
         /// <summary>
         /// 角色id集合
         /// </summary>
+        [ExcelIgnore]
         public long[] RoleIds { get; set; }
         /// <summary>
         /// 岗位集合
         /// </summary>
+        [SugarColumn(IsIgnore = true)]
+        [ExcelIgnore]
         public int[] PostIds { get; set; }
-        public string WelcomeContent { get; set; }
-        public string WelcomeMessage { get; set; }
-        public bool IsAdmin { get; set; }
+
+        [SugarColumn(IsIgnore = true)]
+        [ExcelIgnore]
+        public List<SysRole> Roles { get; set; }
+        [SugarColumn(IsIgnore = true)]
+        public string WelcomeMessage
+        {
+            get
+            {
+                int now = DateTime.Now.Hour;
+
+                if (now > 0 && now <= 6)
+                {
+                    return "午夜好";
+                }
+                else if (now > 6 && now <= 11)
+                {
+                    return "早上好";
+                }
+                else if (now > 11 && now <= 14)
+                {
+                    return "中午好";
+                }
+                else if (now > 14 && now <= 18)
+                {
+                    return "下午好";
+                }
+                else
+                {
+                    return "晚上好";
+                }
+            }
+        }
+
+        #endregion
     }
 
     public class SysUserQueryDto

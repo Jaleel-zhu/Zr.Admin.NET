@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 
 namespace Infrastructure.Model
@@ -23,9 +24,9 @@ namespace Infrastructure.Model
         /// </summary>
         public string NickName { get; set; }
         /// <summary>
-        /// 角色集合
+        /// 角色集合(eg：admin,common)
         /// </summary>
-        public List<string> RoleIds { get; set; }
+        public List<string> RoleKeys { get; set; } = [];
         /// <summary>
         /// 角色集合(数据权限过滤使用)
         /// </summary>
@@ -38,6 +39,10 @@ namespace Infrastructure.Model
         /// 租户ID
         /// </summary>
         public string TenantId { get; set; }
+        /// <summary>
+        /// 用户所有权限
+        /// </summary>
+        public List<string> Permissions { get; set; } = [];
         public TokenModel()
         {
         }
@@ -49,7 +54,22 @@ namespace Infrastructure.Model
             DeptId = info.DeptId;
             Roles = roles;
             NickName = info.NickName;
-            RoleIds = roles.Select(f => f.RoleKey).ToList();
+            RoleKeys = roles.Select(f => f.RoleKey).ToList();
+        }
+
+        public bool HasPermission(string permission)
+        {
+            if (IsAdmin()) return true;
+            return Permissions != null && Permissions.Contains(permission);
+        }
+
+        /// <summary>
+        /// 是否管理员
+        /// </summary>
+        /// <returns></returns>
+        public bool IsAdmin()
+        {
+            return RoleKeys.Contains(GlobalConstant.AdminRole) || UserId == 1;
         }
     }
 

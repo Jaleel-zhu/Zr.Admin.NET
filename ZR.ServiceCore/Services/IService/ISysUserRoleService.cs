@@ -54,9 +54,10 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 新增用户角色信息
         /// </summary>
-        /// <param name="user"></param>
+        /// <param name="roleIds"></param>
+        /// <param name="userId"></param>
         /// <returns></returns>
-        public int InsertUserRole(SysUser user);
+        public int InsertUserRole(long[] roleIds, long userId);
 
         /// <summary>
         /// 新增加角色用户

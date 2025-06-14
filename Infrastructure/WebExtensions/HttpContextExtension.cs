@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Infrastructure.Model;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using UAParser;
+using ZR.Common;
 using ZR.Infrastructure.IPTools;
 
 namespace Infrastructure.Extensions
@@ -273,6 +275,33 @@ namespace Infrastructure.Extensions
             }
             return param;
         }
-    }
 
+        /// <summary>
+        /// 获取当前用户登录信息
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public static TokenModel GetCurrentUser(this HttpContext context)
+        {
+            var tokenModel = JwtUtil.GetLoginUser(context);
+            if (tokenModel != null)
+            {
+                tokenModel.Permissions = (List<string>)CacheHelper.GetCache(GlobalConstant.UserPermKEY + tokenModel.UserId);
+            }
+            return tokenModel;
+        }
+
+        /// <summary>
+        /// 是否有敏感数据权限
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="perm"></param>
+        /// <returns></returns>
+        public static bool HasSensitivePerm(this HttpContext context, string perm)
+        {
+            if (IsAdmin(context)) return true;
+            var perms = context.User?.FindFirst("sensitivePerms")?.Value?.Split(',') ?? [];
+            return perms.Contains(perm);
+        }
+    }
 }

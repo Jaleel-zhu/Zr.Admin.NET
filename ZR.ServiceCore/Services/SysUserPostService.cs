@@ -16,7 +16,7 @@ namespace ZR.ServiceCore.Services
         public void InsertUserPost(SysUser user)
         {
             // 新增用户与岗位管理
-            List<SysUserPost> list = new();
+            List<SysUserPost> list = [];
             foreach (var item in user.PostIds)
             {
                 list.Add(new SysUserPost() { PostId = item, UserId = user.UserId });

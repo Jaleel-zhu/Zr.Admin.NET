@@ -20,7 +20,7 @@
         /// <summary>
         /// 用户权限缓存key
         /// </summary>
-        public static string UserPermKEY = "CACHE-USER-PERM";
+        public static string UserPermKEY = "CACHE-USER-PERM_";
 
         /// <summary>
         /// 欢迎语

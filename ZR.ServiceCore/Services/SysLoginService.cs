@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Localization;
 using UAParser;
 using ZR.Common;
+using ZR.Infrastructure.Constant;
+using ZR.Infrastructure.Helper;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
@@ -84,7 +86,7 @@ namespace ZR.ServiceCore.Services
         /// <param name="loginBody"></param>
         /// <param name="user"></param>
         /// <returns></returns>
-        public SysUser PhoneLogin(PhoneLoginDto loginBody, SysLogininfor logininfor, SysUser user)
+        public SysUserDto PhoneLogin(PhoneLoginDto loginBody, SysLogininfor logininfor, SysUserDto user)
         {
             logininfor.UserName = user.UserName;
             logininfor.Status = "1";
@@ -128,7 +130,15 @@ namespace ZR.ServiceCore.Services
             var query = Queryable().Where(exp.ToExpression())
             .OrderBy(it => it.InfoId, OrderByType.Desc);
 
-            return query.ToPage(logininfoDto);
+            var list = query.ToPage(logininfoDto);
+            foreach (var item in list.Result)
+            {
+                if (!HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealIP))
+                {
+                    item.Ipaddr = MaskUtil.MaskIp(item.Ipaddr);
+                }
+            }
+            return list;
         }
 
         /// <summary>

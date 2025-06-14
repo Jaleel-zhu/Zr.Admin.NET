@@ -54,7 +54,7 @@ namespace ZR.ServiceCore.Middleware
             string ip = HttpContextExtension.GetClientUserIp(context);
             string url = context.Request.Path;
             string osType = context.Request.Headers["os"];
-            
+
             TokenModel loginUser = JwtUtil.GetLoginUser(context);
 
             if (loginUser != null)

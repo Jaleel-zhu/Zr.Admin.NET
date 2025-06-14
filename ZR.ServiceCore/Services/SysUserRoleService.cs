@@ -103,15 +103,15 @@ namespace ZR.ServiceCore.Services
         /// <summary>
         /// 新增用户角色信息
         /// </summary>
-        /// <param name="user"></param>
+        /// <param name="roleIds"></param>
+        /// <param name="userId"></param>
         /// <returns></returns>
-        public int InsertUserRole(SysUser user)
+        public int InsertUserRole(long[] roleIds, long userId)
         {
-            //if(user.RoleIds == null) return 0;
-            List<SysUserRole> userRoles = new();
-            foreach (var item in user.RoleIds)
+            List<SysUserRole> userRoles = [];
+            foreach (var item in roleIds)
             {
-                userRoles.Add(new SysUserRole() { RoleId = item, UserId = user.UserId });
+                userRoles.Add(new SysUserRole() { RoleId = item, UserId = userId });
             }
 
             return userRoles.Count > 0 ? AddUserRole(userRoles) : 0;

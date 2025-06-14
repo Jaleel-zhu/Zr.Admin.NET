@@ -41,7 +41,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult List([FromQuery] SysUserQueryDto user, PagerInfo pager)
         {
             var list = UserService.SelectUserList(user, pager);
-
+            
             return SUCCESS(list);
         }
 
@@ -64,7 +64,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             //编辑
             if (userId > 0)
             {
-                SysUser sysUser = UserService.SelectUserById(userId);
+                SysUserDto sysUser = UserService.SelectUserById(userId);
                 dic.Add("user", sysUser);
                 dic.Add("postIds", UserPostService.GetUserPostsByUserId(userId));
                 dic.Add("roleIds", sysUser.RoleIds);
@@ -106,10 +106,9 @@ namespace ZR.Admin.WebApi.Controllers.System
         [ActionPermissionFilter(Permission = "system:user:edit")]
         public IActionResult UpdateUser([FromBody] SysUserDto parm)
         {
-            var user = parm.Adapt<SysUser>().ToUpdate(HttpContext);
-            if (user == null || user.UserId <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
-
-            int upResult = UserService.UpdateUser(user);
+            if (parm == null || parm.UserId <= 0) { return ToResponse(ApiResult.Error(101, "请求参数错误")); }
+            parm = parm.ToUpdate();
+            int upResult = UserService.UpdateUser(parm);
 
             return ToResponse(upResult);
         }

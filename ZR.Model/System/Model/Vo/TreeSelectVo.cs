@@ -14,6 +14,7 @@
         /// </summary>
         public string Label { get; set; }
         public string Status { get; set; }
+        public string Visible { get; set; }
         public string MenuType { get; set; }
         public string Permission { get; set; }
 
@@ -26,6 +27,7 @@
             Status = menu.Status;
             MenuType = menu.MenuType;
             Permission = menu.Perms;
+            Visible = menu.Visible;
 
             List<TreeSelectVo> child = new List<TreeSelectVo>();
             foreach (var item in menu.Children)

@@ -21,7 +21,7 @@ namespace ZR.ServiceCore.Services
         /// <param name="logininfor"></param>
         /// <param name="user"></param>
         /// <returns></returns>
-        SysUser PhoneLogin(PhoneLoginDto loginBody, SysLogininfor logininfor, SysUser user);
+        SysUserDto PhoneLogin(PhoneLoginDto loginBody, SysLogininfor logininfor, SysUserDto user);
         /// <summary>
         /// 查询操作日志
         /// </summary>

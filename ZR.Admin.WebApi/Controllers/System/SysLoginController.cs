@@ -67,13 +67,14 @@ namespace ZR.Admin.WebApi.Controllers.System
 
             List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
             //权限集合 eg *:*:*,system:user:list
-            List<string> permissions = permissionService.GetMenuPermission(user);
+            List<string> permissions = permissionService.GetMenuPermission(new SysUserDto() { UserId = user.UserId});
             
             TokenModel loginUser = new(user.Adapt<TokenModel>(), roles.Adapt<List<Roles>>())
             {
-                TenantId = loginBody.TenantId
+                TenantId = loginBody.TenantId,
+                Permissions = permissions,
             };
-            CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
+            //CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
             return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser)));
         }
 
@@ -100,9 +101,9 @@ namespace ZR.Admin.WebApi.Controllers.System
         [HttpGet("getInfo")]
         public IActionResult GetUserInfo()
         {
-            long userid = HttpContext.GetUId();
-            var user = sysUserService.SelectUserById(userid);
-
+            long userId = HttpContext.GetUId();
+            var user = sysUserService.SelectUserById(userId);
+            
             //前端校验按钮权限使用
             //角色集合 eg: admin,yunying,common
             List<string> roles = permissionService.GetRolePermission(user);
@@ -110,6 +111,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             List<string> permissions = permissionService.GetMenuPermission(user);
             user.WelcomeContent = GlobalConstant.WelcomeMessages[new Random().Next(0, GlobalConstant.WelcomeMessages.Length)];
             user.Password = string.Empty;
+            CacheService.SetUserPerms(GlobalConstant.UserPermKEY + userId, permissions);
             return SUCCESS(new { user = user.Adapt<SysUserDto>(), roles, permissions });
         }
 
@@ -134,7 +136,7 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult GetAppRouters(int v = 0)
         {
             long uid = HttpContext.GetUId();
-            var perms = permissionService.GetMenuPermission(new SysUser() { UserId = uid });
+            var perms = permissionService.GetMenuPermission(new SysUserDto() { UserId = uid });
 
             return SUCCESS(sysMenuService.GetAppMenus(perms, v));
         }
@@ -329,16 +331,21 @@ namespace ZR.Admin.WebApi.Controllers.System
                 return ToResponse(ResultCode.CUSTOM_ERROR, "短信验证码错误");
             }
             var info = sysUserService.GetFirst(f => f.Phonenumber == loginBody.PhoneNum) ?? throw new CustomException(ResultCode.CUSTOM_ERROR, "该手机号不存在", false);
+            var infoModel = info.Adapt<SysUserDto>();
             sysLoginService.CheckLockUser(info.UserName);
             string location = HttpContextExtension.GetIpInfo(loginBody.LoginIP);
-            var user = sysLoginService.PhoneLogin(loginBody, new SysLogininfor() { LoginLocation = location }, info);
+            var user = sysLoginService.PhoneLogin(loginBody, new SysLogininfor() { LoginLocation = location }, infoModel);
 
             List<SysRole> roles = roleService.SelectUserRoleListByUserId(user.UserId);
             //权限集合 eg *:*:*,system:user:list
             List<string> permissions = permissionService.GetMenuPermission(user);
 
-            TokenModel loginUser = new(user.Adapt<TokenModel>(), roles.Adapt<List<Roles>>());
-            CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
+            TokenModel loginUser = new(user.Adapt<TokenModel>(), roles.Adapt<List<Roles>>())
+            {
+                TenantId = loginBody.TenantId,
+                Permissions = permissions,
+            };
+            //CacheService.SetUserPerms(GlobalConstant.UserPermKEY + user.UserId, permissions);
             return SUCCESS(JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser)));
         }
 

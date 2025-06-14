@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace ZR.ServiceCore.Model.Dto
+﻿namespace ZR.ServiceCore.Model.Dto
 {
     public class PhoneLoginDto
     {
@@ -25,5 +23,9 @@ namespace ZR.ServiceCore.Model.Dto
         /// 0、登录 1、绑定
         /// </summary>
         public int SendType { get; set; }
+        /// <summary>
+        /// 租户id
+        /// </summary>
+        public string TenantId { get; set; }
     }
 }

@@ -1,7 +1,11 @@
-﻿using Infrastructure.Attribute;
+﻿using Infrastructure;
+using Infrastructure.Attribute;
+using ZR.Infrastructure.Constant;
+using ZR.Infrastructure.Helper;
 using ZR.Model;
 using ZR.Model.System;
 using ZR.Model.System.Dto;
+using ZR.Model.System.Generate;
 using ZR.Repository;
 
 namespace ZR.ServiceCore.Services
@@ -43,10 +47,18 @@ namespace ZR.ServiceCore.Services
             exp.AndIF(sysOper.OperParam != null, it => it.OperParam.Contains(sysOper.OperParam));
             exp.AndIF(sysOper.BusinessTypes != null, it => sysOper.BusinessTypes.Contains(it.BusinessType));
 
-            return Queryable()
+            var list = Queryable()
                 .Where(exp.ToExpression())
                 .OrderBy(x => x.OperId, OrderByType.Desc)
                 .ToPage(sysOper);
+            foreach (var item in list.Result)
+            {
+                if (!HttpContextExtension.HasSensitivePerm(App.HttpContext, SensitivePerms.ViewRealIP))
+                {
+                    item.OperIp = MaskUtil.MaskIp(item.OperIp);
+                }
+            }
+            return list;
         }
 
         /// <summary>
@@ -54,6 +66,12 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         public void CleanOperLog()
         {
+            var newTableName = $"sys_oper_log_{DateTime.Now:yyyyMMdd}";
+            if (Queryable().Any() && !Context.DbMaintenance.IsAnyTable(newTableName))
+            {
+                Context.DbMaintenance.BackupTable("sys_oper_log", newTableName);
+            }
+
             Truncate();
         }
 

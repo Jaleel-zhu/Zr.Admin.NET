@@ -6,14 +6,14 @@ namespace ZR.ServiceCore.Services
 {
     public interface ISysUserService : IBaseService<SysUser>
     {
-        public PagedInfo<SysUser> SelectUserList(SysUserQueryDto user, PagerInfo pager);
+        public PagedInfo<SysUserDto> SelectUserList(SysUserQueryDto user, PagerInfo pager);
 
         /// <summary>
         /// 通过用户ID查询用户
         /// </summary>
         /// <param name="userId"></param>
         /// <returns></returns>
-        public SysUser SelectUserById(long userId);
+        public SysUserDto SelectUserById(long userId);
 
         /// <summary>
         /// 校验用户名称是否唯一
@@ -34,7 +34,7 @@ namespace ZR.ServiceCore.Services
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public int UpdateUser(SysUser user);
+        public int UpdateUser(SysUserDto user);
 
         public int ChangeUser(SysUser user);
         /// <summary>

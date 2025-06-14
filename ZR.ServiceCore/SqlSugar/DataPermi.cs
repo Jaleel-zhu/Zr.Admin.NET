@@ -43,8 +43,8 @@ namespace ZR.ServiceCore.SqlSugar
         {
             //获取当前用户的信息
             var user = JwtUtil.GetLoginUser(App.HttpContext);
-            if (user == null) return;
-            
+            if (user == null || user.RoleKeys == null) return;
+
             var db = DbScoped.SugarScope.GetConnectionScope(configId);
             var expUser = Expressionable.Create<SysUser>().And(it => it.DelFlag == 0);
             var expRole = Expressionable.Create<SysRole>();
@@ -54,7 +54,7 @@ namespace ZR.ServiceCore.SqlSugar
             
             db.QueryFilter.AddTableFilter(expSysMsg.ToExpression());
             //管理员不过滤
-            if (user.RoleIds.Any(f => f.Equals(GlobalConstant.AdminRole))) return;
+            if (user.RoleKeys.Any(f => f.Equals(GlobalConstant.AdminRole))) return;
 
             foreach (var role in user.Roles.OrderBy(f => f.DataScope))
             {
@@ -86,7 +86,7 @@ namespace ZR.ServiceCore.SqlSugar
                 else if (DataPermiEnum.SELF.Equals(dataScope))//仅本人数据
                 {
                     expUser.Or(it => it.UserId == user.UserId);
-                    expRole.Or(it => user.RoleIds.Contains(it.RoleKey));
+                    expRole.Or(it => user.RoleKeys.Contains(it.RoleKey));
                     expLoginlog.And(it => it.UserName == user.UserName);
                 }
             }
