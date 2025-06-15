@@ -169,7 +169,7 @@ namespace ZR.Mall.Service
             .OrderBy(o => SqlFunc.ToDateShort(o.PayTime))
             .Select(o => new
             {
-                Date = SqlFunc.ToDateShort(o.PayTime).ToString("yyyy-MM-dd"),
+                Date = SqlFunc.ToDateShort(o.PayTime),
                 TotalSales = SqlFunc.AggregateSum(o.PayAmount),
                 OrderCount = SqlFunc.AggregateCount(o.Id)
             })
