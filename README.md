@@ -70,11 +70,11 @@
 
 ## 💒 代码仓库
 
-| 仓库                | Github                                                          | Gitee                                                          |
-| ------------------- | --------------------------------------------------------------- | -------------------------------------------------------------- |
-| net8                | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET) | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore) |
-| web 前端 vue3(推荐) | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3)          | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)               |
-| 移动端              | [联系作者](http://www.izhaorui.cn/vip/)                         | [联系作者](http://www.izhaorui.cn/vip/)                        |
+| 仓库                | Github                                                 | Gitee                                               |
+| ------------------- | ------------------------------------------------------ | --------------------------------------------------- |
+| net8                | [克隆/下载](https://github.com/izhaorui/Zr.Admin.NET)  | [克隆/下载](https://gitee.com/izory/ZrAdminNetCore) |
+| web 前端 vue3(推荐) | [克隆/下载](https://github.com/izhaorui/ZR.Admin.Vue3) | [克隆/下载](https://gitee.com/izory/ZRAdmin-vue)    |
+| 移动端              | [联系作者](http://www.izhaorui.cn/vip/)                | [联系作者](http://www.izhaorui.cn/vip/)             |
 
 ## 🍁 前端技术
 
@@ -122,6 +122,7 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 23. 三方登录：提供三方登录实现逻辑
 24. 导入导出：支持中文表头导入、字典数据转换成文本导出
 25. 数据大屏：更直观的展示数据
+26. 商城管理：商城功能，包含订单管理、发货、分类、品牌管理、销售统计；（前端还在开发中）
 
 ## 🍻 项目结构
 
@@ -133,10 +134,11 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 ├─ZR.Repository             ->[仓库层类库]：方便提供有执行存储过程的操作；
 ├─ZR.Model                	->[实体层类库]：自己业务库表、数据传输对象；
 ├─ZR.Admin.WebApi           ->[webapi接口]：为Vue版或其他三方系统提供接口服务。
-├─ZR.Tasks               		->[定时任务类库]：提供项目定时任务实现功能；
+├─ZR.Tasks               	->[定时任务类库]：提供项目定时任务实现功能；
 ├─ZR.CodeGenerator          ->[代码生成功能]：包含代码生成的模板、方法、代码生成的下载。
-├─ZR.Vue               			->[前端UI]：vue2.0版本UI层(已经不再更新推荐使用vue3)。
-├─document               		->[文档]：数据库脚本(弃用)
+├─ZR.Mall                   ->[商城后端]：商城相关的后端代码。
+├─ZR.Vue               		->[前端UI]：vue2.0版本UI层(已经不再更新推荐使用vue3)。
+├─document               	->[文档]：数据库脚本(已弃用)
 ```
 
 ## 🍎 演示图
@@ -189,6 +191,14 @@ Vue 版前端技术栈 ：基于 vue2.x/vue3.x/uniapp、vuex、vue-router 、vue
 	<tr>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/23.png"/></td>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/24.png"/></td>
+	</tr>
+    <tr>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/25.jpeg"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/26.jpeg"/></td>
+	</tr>
+     <tr>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/27.jpeg"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/28.jpeg"/></td>
 	</tr>
 </table>
 
