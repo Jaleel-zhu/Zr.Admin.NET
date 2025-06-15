@@ -144,7 +144,8 @@ namespace ZR.Admin.WebApi.Controllers
                     {
                         StoreType = (int)StoreType.ALIYUN,
                         FileType = formFile.ContentType,
-                        ClassifyType = uploadDto.ClassifyType
+                        ClassifyType = uploadDto.ClassifyType,
+                        CategoryId = uploadDto.CategoryId,
                     };
                     sysfile = await SysFileService.SaveFileToAliyun(sysfile, uploadDto, formFile);
 

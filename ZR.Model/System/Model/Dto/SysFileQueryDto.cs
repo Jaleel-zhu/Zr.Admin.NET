@@ -47,6 +47,10 @@
         /// </summary>
         public int? StoreType { get; set; }
         /// <summary>
+        /// 目录
+        /// </summary>
+        public int CategoryId { get; set; }
+        /// <summary>
         /// 访问路径
         /// </summary>
         public string AccessUrl { get; set; }
@@ -75,5 +79,6 @@
         public DateTime? EndCreate_time { get; set; }
         public int? StoreType { get; set; }
         public long? FileId { get; set; }
+        public int? CategoryId { get; set; }
     }
 }

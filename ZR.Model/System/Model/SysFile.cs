@@ -55,6 +55,10 @@
         /// </summary>
         public string AccessUrl { get; set; }
         /// <summary>
+        /// 目录
+        /// </summary>
+        public int CategoryId { get; set; }
+        /// <summary>
         /// 分类
         /// </summary>
         public string ClassifyType { get; set; }

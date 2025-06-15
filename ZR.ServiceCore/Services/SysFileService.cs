@@ -80,7 +80,8 @@ namespace ZR.ServiceCore.Services
                 FileType = formFile.ContentType,
                 FileUrl = finalFilePath.Replace("\\", "/"),
                 AccessUrl = fullUrl.AbsoluteUri,
-                ClassifyType = clasifyType
+                ClassifyType = clasifyType,
+                CategoryId = dto.CategoryId,
             };
             file.Id = await InsertFile(file);
             return file;

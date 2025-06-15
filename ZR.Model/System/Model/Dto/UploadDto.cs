@@ -16,6 +16,10 @@
         public int FileNameType { get; set; }
         public string ClassifyType { get; set; }
         /// <summary>
+        /// 分类id
+        /// </summary>
+        public int CategoryId { get; set; }
+        /// <summary>
         /// 压缩质量0-100之间
         /// </summary>
         public int Quality { get; set; }

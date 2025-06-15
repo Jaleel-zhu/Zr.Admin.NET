@@ -44,6 +44,26 @@ namespace ZR.Admin.WebApi.Controllers
         }
 
         /// <summary>
+        /// 查询文件存储列表
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        [HttpGet("listByGroup")]
+        public IActionResult QueryFile([FromQuery] SysFileQueryDto parm)
+        {
+            var predicate = Expressionable.Create<SysFile>();
+
+            predicate = predicate.AndIF(parm.StoreType != null, m => m.StoreType == parm.StoreType);
+            predicate = predicate.AndIF(parm.FileId != null, m => m.Id == parm.FileId);
+            predicate = predicate.AndIF(parm.ClassifyType != null, m => m.ClassifyType == parm.ClassifyType);
+            predicate = predicate.AndIF(parm.CategoryId > 0, m => m.CategoryId == parm.CategoryId);
+            predicate = predicate.And(m => m.FileType.StartsWith("image/", StringComparison.OrdinalIgnoreCase));
+
+            var response = _SysFileService.GetPages(predicate.ToExpression(), parm, x => x.Id, OrderByType.Desc);
+            return SUCCESS(response);
+        }
+
+        /// <summary>
         /// 查询文件存储详情
         /// </summary>
         /// <param name="Id"></param>
