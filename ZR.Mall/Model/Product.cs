@@ -63,7 +63,7 @@ namespace ZR.Mall.Model
         /// <summary>
         /// 轮播图片 
         /// </summary>
-        [SugarColumn(Length = 5000)]
+        [SugarColumn(Length = 2000)]
         public string ImageUrls { get; set; }
 
         /// <summary>
