@@ -1,3 +1,4 @@
+using Infrastructure.Extensions;
 using Infrastructure.Model;
 using Microsoft.AspNetCore.Mvc;
 using ZR.Common;
@@ -58,7 +59,7 @@ namespace ZR.Mall.Controllers
         /// <returns></returns>
         [HttpPost]
         [ActionPermissionFilter(Permission = "shop:product:add")]
-        [Log(Title = "商品管理", BusinessType = BusinessType.INSERT)]
+        [Log(Title = "商品添加", BusinessType = BusinessType.INSERT)]
         public IActionResult AddShoppingProduct([FromBody] ProductDto parm)
         {
             if (parm == null) { return ToResponse(ResultCode.PARAM_ERROR, "参数错误"); }
@@ -101,15 +102,37 @@ namespace ZR.Mall.Controllers
         /// <returns></returns>
         [HttpPost("delete/{ids}")]
         [ActionPermissionFilter(Permission = "shop:product:delete")]
-        [Log(Title = "商品管理", BusinessType = BusinessType.DELETE)]
+        [Log(Title = "商品删除", BusinessType = BusinessType.DELETE)]
         public IActionResult DeleteShoppingProduct([FromRoute] string ids)
         {
-            var idArr = Tools.SplitAndConvert<int>(ids);
+            var idArr = Tools.SpitLongArrary(ids);
             var result = _ShoppingProductService.Deleteable()
                 .Where(f => f.IsDelete == 0)
-                .In(ids)
+                .In(idArr)
                 .IsLogic()
                 .ExecuteCommand();
+            return SUCCESS(result);
+        }
+
+        /// <summary>
+        /// 批量上架/下架
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        [HttpPost("multi/{type}/{ids}")]
+        [ActionPermissionFilter(Permission = "shop:product:edit")]
+        [Log(Title = "商品上下架", BusinessType = BusinessType.UPDATE)]
+        public IActionResult MultiShoppingProduct([FromRoute] string ids, string type)
+        {
+            var userName = HttpContext.GetName();
+            var idArr = Tools.SpitLongArrary(ids);
+            var result = _ShoppingProductService.Update(f => idArr.Contains(f.ProductId), f => new Product()
+            {
+                SaleStatus = type == "up" ? Enum.SaleStatus.OnSale : Enum.SaleStatus.TakeOff,
+                Update_time = DateTime.Now,
+                Update_by = userName
+            });
             return SUCCESS(result);
         }
 

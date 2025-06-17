@@ -219,13 +219,19 @@ namespace ZR.Mall.Service
         private static Expressionable<OMSOrder> QueryExp(OMSOrderQueryDto parm)
         {
             var predicate = Expressionable.Create<OMSOrder>();
-
+            if (parm.OrderStatus == null && parm.BeginCreateTime == null)
+            {
+                predicate = predicate.And(it => it.CreateTime >= DateTime.Now.AddDays(-7).ToShortDateString().ParseToDateTime());
+            }
+            else
+            {
+                predicate = predicate.AndIF(parm.EndCreateTime != null, it => it.CreateTime >= parm.BeginCreateTime);
+                predicate = predicate.AndIF(parm.EndCreateTime != null, it => it.CreateTime <= parm.EndCreateTime);
+            }
             predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.OrderNo), it => it.OrderNo == parm.OrderNo);
             predicate = predicate.AndIF(parm.UserId != null, it => it.UserId == parm.UserId);
             predicate = predicate.AndIF(parm.OrderStatus != null, it => it.OrderStatus == parm.OrderStatus);
-            predicate = predicate.AndIF(parm.BeginCreateTime == null, it => it.CreateTime >= DateTime.Now.AddDays(-30).ToShortDateString().ParseToDateTime());
-            predicate = predicate.AndIF(parm.BeginCreateTime != null, it => it.CreateTime >= parm.BeginCreateTime);
-            predicate = predicate.AndIF(parm.EndCreateTime != null, it => it.CreateTime <= parm.EndCreateTime);
+
             //predicate = predicate.AndIF(parm.ConfirmStatus != null, it => it.ConfirmStatus == parm.ConfirmStatus);
             predicate = predicate.AndIF(parm.DeliveryNo.IsNotEmpty(), it => it.DeliveryNo == parm.DeliveryNo);
             return predicate;
