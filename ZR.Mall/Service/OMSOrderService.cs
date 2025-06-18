@@ -58,11 +58,6 @@ namespace ZR.Mall.Service
         /// <returns></returns>
         public int UpdateOMSOrder(int operType, OMSOrder model)
         {
-            //发货
-            if (operType == 1)
-            {
-                return UpdateOMSOrderDeliveryInfo(model);
-            }
             //修改商家备注
             if (operType == 2)
             {
@@ -85,10 +80,10 @@ namespace ZR.Mall.Service
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public int UpdateOMSOrderDeliveryInfo(OMSOrder model)
+        public async Task<int> OrderDelivery(OMSOrder model)
         {
             var dbDate = Context.GetDate();
-            var result = Update(w => w.Id == model.Id, it => new OMSOrder()
+            var result = await UpdateAsync(w => w.OrderNo == model.OrderNo, it => new OMSOrder()
             {
                 DeliveryCompany = model.DeliveryCompany,
                 DeliveryNo = model.DeliveryNo,
@@ -131,6 +126,34 @@ namespace ZR.Mall.Service
                 {
                 }, true)
                 .ToPage(parm);
+
+            return response;
+        }
+
+        /// <summary>
+        /// 导出代发货订单
+        /// </summary>
+        /// <param name="parm"></param>
+        /// <returns></returns>
+        public async Task<List<DeliveryExpressDto>> ExportWaitDeliveryList(OMSOrderQueryDto parm)
+        {
+            parm.PageNum = 1;
+            parm.PageSize = 100000;
+            var predicate = Expressionable.Create<OMSOrder>();
+
+            predicate = predicate.And(it => it.OrderStatus == Enum.OrderStatusEnum.TobeShipped);
+            predicate = predicate.And(it => it.DeliveryStatus == Enum.DeliveryStatusEnum.NotDelivered);
+            predicate = predicate.And(it => it.PayTime >= parm.BeginCreateTime && it.PayTime <= parm.EndCreateTime);
+
+            var response = await Queryable()
+                .Where(predicate.ToExpression())
+                .Select((it) => new DeliveryExpressDto()
+                {
+                    DeliveryCompany = it.DeliveryCompany,
+                    DeliveryNo = it.DeliveryNo,
+                    OrderNo = it.OrderNo,
+                })
+                .ToListAsync();
 
             return response;
         }
@@ -234,6 +257,10 @@ namespace ZR.Mall.Service
 
             //predicate = predicate.AndIF(parm.ConfirmStatus != null, it => it.ConfirmStatus == parm.ConfirmStatus);
             predicate = predicate.AndIF(parm.DeliveryNo.IsNotEmpty(), it => it.DeliveryNo == parm.DeliveryNo);
+            predicate = predicate.And(it => it.IsDelete == 0);
+            //待发货双条件查询
+            predicate = predicate.AndIF(parm.OrderStatus == Enum.OrderStatusEnum.TobeShipped, it => it.DeliveryStatus == 0);
+
             return predicate;
         }
     }

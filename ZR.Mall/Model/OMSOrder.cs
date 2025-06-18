@@ -7,6 +7,7 @@ namespace ZR.Mall.Model
     /// 订单管理
     /// </summary>
     [SugarTable("oms_order", "订单表")]
+    [SugarIndex("index_orderNo", nameof(OrderNo), OrderByType.Asc, true)]
     [Tenant("1")]
     public class OMSOrder
     {

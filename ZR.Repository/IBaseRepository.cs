@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using ZR.Model;
 
 namespace ZR.Repository
@@ -32,6 +33,7 @@ namespace ZR.Repository
         int Update(T entity, Expression<Func<T, object>> expression, Expression<Func<T, bool>> where);
 
         int Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns);
+        Task<int> UpdateAsync(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns);
 
         #endregion update
         DbResult<bool> UseTran(Action action);

@@ -87,6 +87,9 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Name = "限购")]
         public PurchaseLimit PurchaseLimit { get; set; }
 
+        [ExcelColumn(Name = "规格类型")]
+        public SpecType SpecType { get; set; } = SpecType.Multiple;
+
         [ExcelColumn(Ignore = true)]
         public List<SkusDto> Skus { get; set; }
 

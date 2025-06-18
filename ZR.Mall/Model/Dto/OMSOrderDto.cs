@@ -93,4 +93,25 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Ignore = true)]
         public List<OMSOrderItemDto> Items { get; set; }
     }
+
+    /// <summary>
+    /// 快递发货
+    /// </summary>
+    public class DeliveryExpressDto
+    {
+        [ExcelColumn(Name = "订单号", Width = 30)]
+        [ExcelColumnName("订单号")]
+        public string OrderNo { get; set; }
+
+        [ExcelColumn(Name = "物流公司", Width = 30)]
+        [ExcelColumnName("物流公司")]
+        public string DeliveryCompany { get; set; }
+
+        [ExcelColumn(Name = "物流单号", Width = 30)]
+        [ExcelColumnName("物流单号")]
+        public string DeliveryNo { get; set; }
+
+        [ExcelColumn(Ignore = true)]
+        public string Status { get; set; }
+    }
 }

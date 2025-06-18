@@ -117,6 +117,11 @@ namespace ZR.Mall.Model
         public string SpecSummary { get; set; }
 
         /// <summary>
+        /// 规格类型
+        /// </summary>
+        public SpecType SpecType { get; set; } = SpecType.Multiple;
+
+        /// <summary>
         /// 限购
         /// </summary>
         [SugarColumn(IsJson = true)]

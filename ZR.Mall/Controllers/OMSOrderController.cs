@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using MiniExcelLibs;
 using ZR.Common;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
@@ -79,7 +81,11 @@ namespace ZR.Mall.Controllers
         {
             var idArr = Tools.SplitAndConvert<long>(ids);
 
-            return ToResponse(_OMSOrderService.Delete(idArr));
+            return ToResponse(_OMSOrderService.Deleteable()
+                .Where(f => f.IsDelete == 0)
+                .In(idArr)
+                .IsLogic()
+                .ExecuteCommand());
         }
 
         /// <summary>
@@ -98,6 +104,96 @@ namespace ZR.Mall.Controllers
             }
             var result = ExportExcelMini(list, "订单管理", "订单管理");
             return ExportExcel(result.Item2, result.Item1);
+        }
+
+        /// <summary>
+        /// 订单发货
+        /// </summary>
+        /// <returns></returns>
+        [HttpPut("delivery")]
+        [Log(Title = "订单发货", BusinessType = BusinessType.UPDATE)]
+        public async Task<IActionResult> Delivery([FromBody] OMSOrderDto parm)
+        {
+            var modal = parm.Adapt<OMSOrder>().ToUpdate(HttpContext);
+            var response = await _OMSOrderService.OrderDelivery(modal);
+
+            return ToResponse(response);
+        }
+
+        /// <summary>
+        /// 导出待发货订单
+        /// </summary>
+        /// <returns></returns>
+        [Log(Title = "导出待发货订单", BusinessType = BusinessType.EXPORT, IsSaveResponseData = false)]
+        [HttpGet("exportDelivery")]
+        [ActionPermissionFilter(Permission = "oms:order:ship")]
+        public async Task<IActionResult> ExportExpress([FromQuery] OMSOrderQueryDto parm)
+        {
+            if (parm == null || parm.BeginCreateTime == null)
+            {
+                return ToResponse(ResultCode.CUSTOM_ERROR, "请选择时间");
+            }
+            var list = await _OMSOrderService.ExportWaitDeliveryList(parm);
+            var result = await ExportExcelMiniAsync(list, "待发货", "待发货订单");
+            return ExportExcel(result.Item2, result.Item1);
+        }
+
+        /// <summary>
+        /// 批量发货
+        /// </summary>
+        /// <param name="formFile"></param>
+        /// <returns></returns>
+        [HttpPost("importData")]
+        [Log(Title = "批量发货", BusinessType = BusinessType.IMPORT, IsSaveRequestData = false, IsSaveResponseData = true)]
+        [ActionPermissionFilter(Permission = "oms:order:ship")]
+        public async Task<IActionResult> ImportData([FromForm(Name = "file")] IFormFile formFile)
+        {
+            if (formFile == null || formFile.Length <= 0)
+            {
+                return ToResponse(ResultCode.FAIL, "请选择要导入的文件");
+            }
+            var resultList = new List<DeliveryExpressDto>();
+            using var stream = formFile.OpenReadStream();
+            var rows = await stream.QueryAsync<DeliveryExpressDto>(startCell: "A1");
+
+            var orderNos = rows.Select(x => x.OrderNo).Distinct().ToList();
+            var allOrders = await _OMSOrderService.Queryable().In(x => x.OrderNo, orderNos).ToListAsync();
+
+            foreach (var item in rows)
+            {
+                if (string.IsNullOrWhiteSpace(item.DeliveryCompany) || string.IsNullOrWhiteSpace(item.DeliveryNo))
+                {
+                    item.Status = "缺少快递信息"; 
+                    resultList.Add(item);
+                    continue;
+                }
+                var orderInfo = allOrders.FirstOrDefault(f => f.OrderNo == item.OrderNo);
+                if (orderInfo == null)
+                {
+                    item.Status = "订单号不存在";
+                    resultList.Add(item);
+                    continue;
+                }
+                if (orderInfo.DeliveryStatus != Enum.DeliveryStatusEnum.NotDelivered)
+                {
+                    item.Status = "已发货";
+                    resultList.Add(item);
+                    continue;
+                }
+                var order = item.Adapt<OMSOrder>();
+                
+                var result =  await _OMSOrderService.OrderDelivery(order);
+                item.Status = result > 0 ? "发货成功" : "发货失败";
+                resultList.Add(item);
+            }
+
+            return SUCCESS(new
+            {
+                total = resultList.Count,
+                successCount = resultList.Count(x => x.Status == "发货成功"),
+                failCount = resultList.Count(x => x.Status != "发货成功"),
+                result = resultList
+            });
         }
 
         /// <summary>
@@ -121,7 +217,7 @@ namespace ZR.Mall.Controllers
         [ActionPermissionFilter(Permission = "oms:sale:query")]
         public async Task<IActionResult> GetSalesTrade(OMSOrderQueryDto dto)
         {
-            var response =  await _OMSOrderService.GetSaleTreandByDay(dto);
+            var response = await _OMSOrderService.GetSaleTreandByDay(dto);
 
             return SUCCESS(response);
         }

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
 using ZR.Model;
 
 namespace ZR.Repository
@@ -145,6 +146,10 @@ namespace ZR.Repository
         public int Update(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns)
         {
             return Context.Updateable<T>().SetColumns(columns).Where(where).RemoveDataCache().ExecuteCommand();
+        }
+        public async Task<int> UpdateAsync(Expression<Func<T, bool>> where, Expression<Func<T, T>> columns)
+        {
+            return await Context.Updateable<T>().SetColumns(columns).Where(where).RemoveDataCache().ExecuteCommandAsync();
         }
         #endregion update
 

@@ -9,6 +9,7 @@ using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using System.Web;
 
 namespace Infrastructure.Controllers
@@ -169,7 +170,7 @@ namespace Infrastructure.Controllers
         protected (string, string) ExportExcelMini<T>(List<T> list, string sheetName, string fileName)
         {
             IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
-            string sFileName = $"{fileName}_{DateTime.Now:MMdd-HHmmss}.xlsx";
+            string sFileName = $"{fileName}_{DateTime.Now:MMdd_HHmmss}.xlsx";
             string fullPath = Path.Combine(webHostEnvironment.WebRootPath, "export", sFileName);
 
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
@@ -177,7 +178,17 @@ namespace Infrastructure.Controllers
             MiniExcel.SaveAs(fullPath, list, sheetName: sheetName);
             return (sFileName, fullPath);
         }
+        protected async Task<(string, string)> ExportExcelMiniAsync<T>(List<T> list, string sheetName, string fileName)
+        {
+            IWebHostEnvironment webHostEnvironment = (IWebHostEnvironment)App.ServiceProvider.GetService(typeof(IWebHostEnvironment));
+            string sFileName = $"{fileName}_{DateTime.Now:MMdd_HHmmss}.xlsx";
+            string fullPath = Path.Combine(webHostEnvironment.WebRootPath, "export", sFileName);
 
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+
+            await MiniExcel.SaveAsAsync(fullPath, list, sheetName: sheetName);
+            return (sFileName, fullPath);
+        }
         /// <summary>
         /// 导出多个工作表(Sheet)
         /// </summary>

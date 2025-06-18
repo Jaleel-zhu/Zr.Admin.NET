@@ -13,10 +13,10 @@ namespace ZR.Mall.Service.IService
         OMSOrder GetInfo(long Id);
 
         int UpdateOMSOrder(int operType, OMSOrder parm);
-        int UpdateOMSOrderDeliveryInfo(OMSOrder model);
+        Task<int> OrderDelivery(OMSOrder model);
         int UpdateMerchantNote(OMSOrder model);
         PagedInfo<OMSOrderDto> ExportList(OMSOrderQueryDto parm);
-
+        Task<List<DeliveryExpressDto>> ExportWaitDeliveryList(OMSOrderQueryDto parm);
         Task<dynamic> GetTotalSales(OMSOrderQueryDto dto);
         Task<dynamic> GetSaleTreandByDay(OMSOrderQueryDto dto);
         Task<dynamic> GetSaleTopProduct(OMSOrderQueryDto dto);
