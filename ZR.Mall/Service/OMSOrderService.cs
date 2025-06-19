@@ -84,6 +84,13 @@ namespace ZR.Mall.Service
                 });
                 return result;
             }
+            //订单退款
+            if (operType == 4)
+            {
+                //TODO 退款逻辑
+
+                throw new CustomException("还未实现");
+            }
             return Update(model, true);
         }
 

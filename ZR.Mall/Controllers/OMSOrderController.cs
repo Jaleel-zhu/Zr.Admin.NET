@@ -90,6 +90,20 @@ namespace ZR.Mall.Controllers
         }
 
         /// <summary>
+        /// 订单退款
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("refund")]
+        [Log(Title = "订单退款", BusinessType = BusinessType.UPDATE)]
+        public IActionResult RefundOrder([FromBody] OMSOrderDto parm)
+        {
+            var modal = parm.Adapt<OMSOrder>().ToUpdate(HttpContext);
+            var response = _OMSOrderService.UpdateOMSOrder(4, modal);
+
+            return ToResponse(response);
+        }
+
+        /// <summary>
         /// 导出订单管理
         /// </summary>
         /// <returns></returns>
