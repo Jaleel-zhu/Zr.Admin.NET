@@ -1,6 +1,5 @@
 ﻿namespace ZR.Model.System
 {
-    //[EpplusTable(PrintHeaders = true, AutofitColumns = true, AutoCalculate = true, ShowTotal = true)]
     public class SysBase
     {
         /// <summary>
@@ -14,7 +13,7 @@
         /// <summary>
         /// 创建时间
         /// </summary>
-        [SugarColumn(IsOnlyIgnoreUpdate = true, IsNullable = true)]
+        [SugarColumn(IsOnlyIgnoreUpdate = true, IsNullable = true, InsertServerTime = true)]
         [JsonProperty(propertyName: "createTime")]
         [ExcelColumn(Format = "yyyy-MM-dd HH:mm:ss")]
         public DateTime Create_time { get; set; } = DateTime.Now;
@@ -32,7 +31,7 @@
         /// 更新时间
         /// </summary>
         //[JsonIgnore]
-        [SugarColumn(IsOnlyIgnoreInsert = true, IsNullable = true)]
+        [SugarColumn(IsOnlyIgnoreInsert = true, IsNullable = true, UpdateServerTime = true)]
         [JsonProperty(propertyName: "updateTime")]
         [ExcelIgnore]
         public DateTime? Update_time { get; set; }

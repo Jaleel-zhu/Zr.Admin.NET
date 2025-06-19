@@ -8,6 +8,7 @@
         public int MenuId { get; set; }
         [ExcelColumn(Name = "菜单名")]
         public string MenuName { get; set; }
+        public string RouteName { get; set; }
         /// <summary>
         /// 父菜单ID
         /// </summary>

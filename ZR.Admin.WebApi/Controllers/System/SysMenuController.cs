@@ -153,6 +153,15 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 return ToResponse(ApiResult.Error($"新增菜单'{menu.MenuName}'失败，地址必须以http(s)://开头"));
             }
+
+            if (menu.RouteName.IsNotEmpty())
+            {
+                var existRouteName = sysMenuService.Any(f => f.RouteName == menu.RouteName);
+                if (existRouteName)
+                {
+                    return ToResponse(ResultCode.CUSTOM_ERROR, $"已存在相同路由名{menu.RouteName}");
+                }
+            }
             var uid = HttpContext.GetUId();
             menu.Create_by = HttpContext.GetName();
             long result = sysMenuService.AddMenu(menu);
@@ -160,7 +169,7 @@ namespace ZR.Admin.WebApi.Controllers.System
             {
                 var userRoles = sysRoleService.SelectUserRoles(uid);
                 var roleId = userRoles.FirstOrDefault();
-                if (!sysRoleService.IsAdmin(uid) && roleId >0)
+                if (!sysRoleService.IsAdmin(uid) && roleId > 0)
                 {
                     sysRoleService.InsertRoleMenu(new SysRoleDto
                     {
@@ -168,7 +177,7 @@ namespace ZR.Admin.WebApi.Controllers.System
                         RoleId = roleId,
                         MenuIds = [result]
                     });
-                }         
+                }
             }
             return ToResponse(result);
         }

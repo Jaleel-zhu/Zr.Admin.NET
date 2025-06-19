@@ -110,5 +110,10 @@
                 return SubNum > 0 || Children.Count > 0;
             }
         }
+
+        /// <summary>
+        /// 路由名
+        /// </summary>
+        public string RouteName { get; set; }
     }
 }

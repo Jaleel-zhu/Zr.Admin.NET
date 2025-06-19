@@ -99,7 +99,6 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public long AddMenu(SysMenu menu)
         {
-            menu.Create_time = DateTime.Now;
             return InsertReturnBigIdentity(menu);
         }
 
@@ -157,7 +156,7 @@ namespace ZR.ServiceCore.Services
                     throw new CustomException($"{menu.Path}路由地址已存在");
                 }
             }
-       
+
             //if (info != null && menuId != info.menuId && menu.menuName.Equals(info.menuName))
             //{
             //    return UserConstants.NOT_UNIQUE;
@@ -403,13 +402,13 @@ namespace ZR.ServiceCore.Services
                 else if (IsMeunFrame(menu))
                 {
                     router.Meta = null;
-                    List<RouterVo> childrenList = new();
+                    List<RouterVo> childrenList = [];
                     RouterVo children = new()
                     {
                         Query = menu.Query,
                         Path = menu.Path,
                         Component = menu.Component,
-                        Name = string.IsNullOrEmpty(menu.Path) ? "" : menu.Path.ToLower(),
+                        Name = menu.RouteName.IsNotEmpty() ? menu.RouteName : menu.Path.ToLower(),
                         Meta = new Meta(menu.MenuName, menu.Icon, "1".Equals(menu.IsCache), menu.MenuNameKey, menu.Path, menu.Create_time)
                     };
                     childrenList.Add(children);
@@ -425,7 +424,7 @@ namespace ZR.ServiceCore.Services
                     children.Query = menu.Query;
                     children.Path = routerPath;
                     children.Component = UserConstants.INNER_LINK;
-                    children.Name = routerPath.ToLower();
+                    children.Name = menu.RouteName.IsNotEmpty() ? menu.RouteName : routerPath.ToLower();
                     children.Meta = new Meta(menu.MenuName, menu.Icon, menu.Path);
                     childrenList.Add(children);
                     router.Children = childrenList;
@@ -491,6 +490,10 @@ namespace ZR.ServiceCore.Services
         public string GetRouteName(SysMenu menu)
         {
             string routerName = menu.Path.ToLower();
+            if (menu.RouteName.IsNotEmpty())
+            {
+                routerName = menu.RouteName;
+            }
             // 非外链并且是一级目录（类型为目录）
             if (IsMeunFrame(menu))
             {
