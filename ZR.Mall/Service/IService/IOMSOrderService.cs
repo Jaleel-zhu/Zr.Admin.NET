@@ -11,7 +11,7 @@ namespace ZR.Mall.Service.IService
         PagedInfo<OMSOrderDto> GetList(OMSOrderQueryDto parm);
 
         OMSOrder GetInfo(long Id);
-
+        int NotDelivereOrder();
         int UpdateOMSOrder(int operType, OMSOrder parm);
         Task<int> OrderDelivery(OMSOrder model);
         int UpdateMerchantNote(OMSOrder model);

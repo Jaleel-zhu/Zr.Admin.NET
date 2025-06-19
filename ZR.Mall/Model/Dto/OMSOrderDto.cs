@@ -28,7 +28,7 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Ignore = true)]
         public int OperType { get; set; }
 
-        [ExcelColumn(Name = "Id")]
+        [ExcelColumn(Name = "订单Id")]
         public long Id { get; set; }
 
         [ExcelColumn(Name = "订单号")]
@@ -43,7 +43,7 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Name = "付款金额")]
         public decimal PayAmount { get; set; }
 
-        [ExcelColumn(Name = "订单状态")]
+        [ExcelColumn(Name = "订单状态", Ignore = true)]
         public int? OrderStatus { get; set; }
 
         [ExcelColumn(Name = "下单时间", Format = "yyyy-MM-dd HH:mm:ss", Width = 20)]
@@ -76,11 +76,16 @@ namespace ZR.Mall.Model.Dto
         [ExcelColumn(Name = "订单状态")]
         public string OrderStatusLabel { get; set; }
 
+        [JsonIgnore]
+        [ExcelColumn(Name = "收货人", Width = 30)]
+        public string User { get; set; }
+
+        [ExcelColumn(Name = "收货地址", Width = 60)]
         public string AddressLabel
         {
             get
             {
-                if(AddressSnapshot != null)
+                if (AddressSnapshot != null)
                 {
                     return $"{AddressSnapshot.Province}/{AddressSnapshot.City}/{AddressSnapshot.DetailAddress}";
                 }
@@ -88,7 +93,8 @@ namespace ZR.Mall.Model.Dto
             }
         }
 
-        [ExcelColumn(Name = "收货地址")]
+        [ExcelColumn(Ignore = true)]
+        [SugarColumn(IsJson = true)]
         public AddressSnapshot AddressSnapshot { get; set; }
         [ExcelColumn(Ignore = true)]
         public List<OMSOrderItemDto> Items { get; set; }

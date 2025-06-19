@@ -1,4 +1,5 @@
 using Infrastructure.Extensions;
+using ZR.Mall.Enum;
 using ZR.Mall.Model;
 using ZR.Mall.Model.Dto;
 using ZR.Mall.Service.IService;
@@ -33,6 +34,17 @@ namespace ZR.Mall.Service
                 .ToPage<OMSOrder, OMSOrderDto>(parm);
 
             return response;
+        }
+
+        /// <summary>
+        /// 查询未发货的订单数
+        /// </summary>
+        /// <returns></returns>
+        public int NotDelivereOrder()
+        {
+            return Queryable()
+                .Where(f => f.OrderStatus == Enum.OrderStatusEnum.Completed && f.DeliveryStatus == Enum.DeliveryStatusEnum.NotDelivered)
+                .Count();
         }
 
         /// <summary>
@@ -125,6 +137,10 @@ namespace ZR.Mall.Service
                 .Select((it) => new OMSOrderDto()
                 {
                 }, true)
+                .Mapper(it =>
+                {
+                    it.User = $"{it.AddressSnapshot?.UserName} {it.AddressSnapshot?.Phone}"; 
+                })
                 .ToPage(parm);
 
             return response;
@@ -248,10 +264,9 @@ namespace ZR.Mall.Service
             }
             else
             {
-                predicate = predicate.AndIF(parm.EndCreateTime != null, it => it.CreateTime >= parm.BeginCreateTime);
-                predicate = predicate.AndIF(parm.EndCreateTime != null, it => it.CreateTime <= parm.EndCreateTime);
+                predicate = predicate.AndIF(parm.EndCreateTime != null, it => it.CreateTime >= parm.BeginCreateTime && it.CreateTime <= parm.EndCreateTime);
             }
-            predicate = predicate.AndIF(!string.IsNullOrEmpty(parm.OrderNo), it => it.OrderNo == parm.OrderNo);
+            predicate = predicate.AndIF(parm.OrderNo.IsNotEmpty(), it => it.OrderNo == parm.OrderNo);
             predicate = predicate.AndIF(parm.UserId != null, it => it.UserId == parm.UserId);
             predicate = predicate.AndIF(parm.OrderStatus != null, it => it.OrderStatus == parm.OrderStatus);
 
@@ -259,7 +274,7 @@ namespace ZR.Mall.Service
             predicate = predicate.AndIF(parm.DeliveryNo.IsNotEmpty(), it => it.DeliveryNo == parm.DeliveryNo);
             predicate = predicate.And(it => it.IsDelete == 0);
             //待发货双条件查询
-            predicate = predicate.AndIF(parm.OrderStatus == Enum.OrderStatusEnum.TobeShipped, it => it.DeliveryStatus == 0);
+            predicate = predicate.AndIF(parm.OrderStatus == Enum.OrderStatusEnum.TobeShipped, it => it.DeliveryStatus == DeliveryStatusEnum.NotDelivered);
 
             return predicate;
         }

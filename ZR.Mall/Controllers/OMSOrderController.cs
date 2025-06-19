@@ -38,6 +38,7 @@ namespace ZR.Mall.Controllers
         public IActionResult QueryOMSOrder([FromQuery] OMSOrderQueryDto parm)
         {
             var response = _OMSOrderService.GetList(parm);
+            response.Extra.Add("NotDelivereOrder", _OMSOrderService.NotDelivereOrder());
             return SUCCESS(response);
         }
 
