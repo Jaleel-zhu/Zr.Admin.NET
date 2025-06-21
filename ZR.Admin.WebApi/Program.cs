@@ -13,6 +13,7 @@ using ZR.Infrastructure.WebExtensions;
 using ZR.ServiceCore.Signalr;
 using ZR.ServiceCore.SqlSugar;
 using ZR.Mall;
+//using SQLitePCL;
 
 var builder = WebApplication.CreateBuilder(args);
 // NLog: Setup NLog for Dependency injection
@@ -53,7 +54,8 @@ builder.Services.AddAppService();
 builder.Services.AddTaskSchedulers();
 //请求大小限制
 builder.Services.AddRequestLimit(builder.Configuration);
-
+//sqlite 包需要的驱动
+//Batteries_V2.Init();
 //注册REDIS 服务
 var openRedis = builder.Configuration["RedisServer:open"];
 if (openRedis == "1")
@@ -87,7 +89,7 @@ builder.Services.AddSwaggerConfig();
 builder.Services.AddLogo();
 // 添加本地化服务
 builder.Services.AddLocalization(options => options.ResourcesPath = "");
-
+// 在应用程序启动的最开始处调用
 var app = builder.Build();
 InternalApp.ServiceProvider = app.Services;
 InternalApp.Configuration = builder.Configuration;

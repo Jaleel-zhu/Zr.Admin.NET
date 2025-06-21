@@ -181,6 +181,16 @@ namespace ZR.ServiceCore.SqlSugar
                             p.DataType = "char(1)";
                         }
                     }
+                    #region 兼容sqllite
+                    if (config.DbType == DbType.Sqlite)
+                    {
+                        if (p.IsPrimarykey && c.PropertyType == typeof(long))
+                        {
+                            p.DataType = "INTEGER";
+                        }
+                    }
+                    #endregion
+
                     #region 兼容Oracle
                     if (config.DbType == DbType.Oracle)
                     {
