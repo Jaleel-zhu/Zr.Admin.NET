@@ -792,6 +792,9 @@ $if(replaceDto.ShowBtnEdit)
           open.value = false
           getList()
         })
+        .finally(() => {
+          state.submitLoading = false
+        })
 $end
       } else {
 $if(replaceDto.ShowBtnAdd)
