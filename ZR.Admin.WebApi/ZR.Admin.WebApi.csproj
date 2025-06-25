@@ -27,6 +27,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Folder Include="Controllers\Business\" />
 		<Folder Include="Properties\PublishProfiles\" />
 	</ItemGroup>
 

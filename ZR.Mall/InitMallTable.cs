@@ -15,7 +15,7 @@ namespace ZR.Mall
         {
             var db = DbScoped.SugarScope.GetConnection("1");
             var options = App.OptionsSetting;
-            
+
             if (!options.InitDb) return;
 
             if (environment.IsDevelopment())
@@ -28,6 +28,7 @@ namespace ZR.Mall
                 db.CodeFirst.InitTables(typeof(OMSOrder));
                 db.CodeFirst.InitTables(typeof(OMSOrderItem));
                 db.CodeFirst.InitTables(typeof(MMSUserAddress));
+                db.CodeFirst.InitTables(typeof(SpecTemplate));
             }
         }
     }
