@@ -14,7 +14,7 @@ namespace ZR.Mall.Controllers
     /// </summary>
     [Route("shopping/Order")]
     [ApiExplorerSettings(GroupName = "shopping")]
-    public class OMSOrderController : BaseController
+    public class OrderController : BaseController
     {
         private NLog.Logger _logger = NLog.LogManager.GetCurrentClassLogger();
 
@@ -23,7 +23,7 @@ namespace ZR.Mall.Controllers
         /// </summary>
         private readonly IOMSOrderService _OMSOrderService;
 
-        public OMSOrderController(IOMSOrderService OMSOrderService)
+        public OrderController(IOMSOrderService OMSOrderService)
         {
             _OMSOrderService = OMSOrderService;
         }
