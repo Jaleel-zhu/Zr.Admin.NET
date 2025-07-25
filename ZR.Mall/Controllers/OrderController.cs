@@ -129,10 +129,19 @@ namespace ZR.Mall.Controllers
         [Log(Title = "订单发货", BusinessType = BusinessType.UPDATE)]
         public async Task<IActionResult> Delivery([FromBody] OMSOrderDto parm)
         {
-            var modal = parm.Adapt<OMSOrder>().ToUpdate(HttpContext);
-            var response = await _OMSOrderService.OrderDelivery(modal);
-
-            return ToResponse(response);
+            var orderInfo = await _OMSOrderService.GetByIdAsync(parm.Id);
+            if (orderInfo == null)
+            {
+                return ToResponse(ResultCode.FAIL, "订单不存在");
+            }
+            orderInfo.DeliveryCompany = parm.DeliveryCompany;
+            orderInfo.DeliveryNo = parm.DeliveryNo;
+            var response = await _OMSOrderService.OrderDelivery(orderInfo);
+            if (response > 0)
+            {
+                return ToResponse(ResultCode.SUCCESS, "发货成功");
+            }
+            return ToResponse(ResultCode.CUSTOM_ERROR, $"发货失败{response}");
         }
 
         /// <summary>
@@ -192,6 +201,12 @@ namespace ZR.Mall.Controllers
                 if (orderInfo.DeliveryStatus != Enum.DeliveryStatusEnum.NotDelivered)
                 {
                     item.Status = "已发货";
+                    resultList.Add(item);
+                    continue;
+                }
+                if (orderInfo.AddressSnapshot == null)
+                {
+                    item.Status = "缺少收货信息";
                     resultList.Add(item);
                     continue;
                 }

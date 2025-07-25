@@ -43,7 +43,7 @@ namespace ZR.Mall.Service
         public int NotDelivereOrder()
         {
             return Queryable()
-                .Where(f => f.OrderStatus == Enum.OrderStatusEnum.Completed && f.DeliveryStatus == Enum.DeliveryStatusEnum.NotDelivered)
+                .Where(f => f.OrderStatus == Enum.OrderStatusEnum.TobeShipped && f.DeliveryStatus == Enum.DeliveryStatusEnum.NotDelivered)
                 .Count();
         }
 
@@ -78,7 +78,7 @@ namespace ZR.Mall.Service
             //修改地址
             if (operType == 3)
             {
-                var result = Update(w => w.Id == model.Id, it => new OMSOrder()
+                var result = Update(w => w.OrderNo == model.OrderNo, it => new OMSOrder()
                 {
                     AddressSnapshot = model.AddressSnapshot,
                 });
@@ -102,12 +102,20 @@ namespace ZR.Mall.Service
         public async Task<int> OrderDelivery(OMSOrder model)
         {
             var dbDate = Context.GetDate();
+            if (model.DeliveryStatus != DeliveryStatusEnum.NotDelivered)
+            {
+                return -1;//已发货
+            }
+            if (model.AddressSnapshot == null)
+            {
+                return -2; // 地址信息不能为空
+            }
             var result = await UpdateAsync(w => w.OrderNo == model.OrderNo, it => new OMSOrder()
             {
                 DeliveryCompany = model.DeliveryCompany,
                 DeliveryNo = model.DeliveryNo,
-                OrderStatus = Enum.OrderStatusEnum.Shipped, // 已发货
-                DeliveryStatus = Enum.DeliveryStatusEnum.Delivering, // 已发货
+                OrderStatus = OrderStatusEnum.Shipped, // 已发货
+                DeliveryStatus = DeliveryStatusEnum.Delivering, // 已发货
                 ShipTime = dbDate
             });
             //TODO 发送消息通知用户,订单完整日志
