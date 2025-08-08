@@ -28,6 +28,7 @@ namespace ZR.Admin.WebApi.Controllers.Public
         /// <param name="parm"></param>
         /// <returns></returns>
         [HttpGet("list")]
+        [AllowAnonymous]
         [ActionPermissionFilter(Permission = "bannerconfig:list")]
         public IActionResult QueryBannerConfig([FromQuery] BannerConfigQueryDto parm)
         {
