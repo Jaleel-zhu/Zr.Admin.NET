@@ -28,10 +28,6 @@
 
 ---
 
-## 🌟 Github star
-
-[![Star History Chart](https://api.star-history.com/svg?repos=izhaorui/Zr.Admin.NET&type=Date)](https://github.com/izhaorui/Zr.Admin.NET)
-
 ## 🍟 概述
 
 - 本项目适合有一定 NetCore 和 vue 基础的开发人员
@@ -60,9 +56,9 @@
 - Uniapp 版本体验(vue3)：[http://demo.izhaorui.cn/uplus](http://demo.izhaorui.cn/uplus)
 - 账号密码：admin/123456，普通用户 user/123456
 
-| H5                                                                                     | 微信小程序                                                                           |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/qrcodeH5.png) | ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/qrcode.jpg) |
+| H5                                                                                     |
+| -------------------------------------------------------------------------------------- |
+| ![alt](https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/qrcodeH5.png) |
 
 ```
 由于是个人项目，资金有限，体验服务器是低配，请大家爱惜，轻戳，不胜感激！！！
