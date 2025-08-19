@@ -256,6 +256,7 @@ namespace ZR.Mall.Service
             //predicate = predicate.AndIF(parm.BeginAddTime == null, it => it.AddTime >= DateTime.Now.ToShortDateString().ParseToDateTime());
             predicate = predicate.AndIF(parm.BeginAddTime != null, it => it.AddTime >= parm.BeginAddTime);
             predicate = predicate.AndIF(parm.EndAddTime != null, it => it.AddTime <= parm.EndAddTime);
+            predicate = predicate.And(it => it.IsDelete == 0);
             return predicate;
         }
     }
