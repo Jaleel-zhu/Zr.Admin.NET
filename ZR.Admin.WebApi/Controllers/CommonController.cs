@@ -189,10 +189,10 @@ namespace ZR.Admin.WebApi.Controllers
                 }
             }
             string fullPath = tempPath;
-            //if (tempPath.StartsWith("/"))
-            //{
-            //    fullPath = Path.Combine(WebHostEnvironment.WebRootPath, tempPath.ReplaceFirst("/", ""));
-            //}
+            if (tempPath.StartsWith("/") && WebHostEnvironment.IsDevelopment())
+            {
+                fullPath = Path.Combine(WebHostEnvironment.WebRootPath, tempPath.ReplaceFirst("/", ""));
+            }
             string fileName = Path.GetFileName(fullPath);
             return DownFile(fullPath, fileName);
         }

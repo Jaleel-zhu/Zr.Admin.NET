@@ -297,8 +297,11 @@ namespace ZR.Admin.WebApi.Controllers
             }
             if (dto.GenTable.GenType != "1")
             {
+                var fullPath = Path.Combine(WebHostEnvironment.WebRootPath, "Generatecode", zipReturnFileName);
+
                 //压缩文件
                 FileUtil.ZipGenCode(dto.ZipPath, dto.GenCodePath, zipReturnFileName);
+                Thread.Sleep(1000);
             }
             return SUCCESS(new { path = "/Generatecode/" + zipReturnFileName, fileName = dto.ZipFileName });
         }
