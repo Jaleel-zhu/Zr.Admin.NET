@@ -170,9 +170,9 @@ app.UseRateLimiter();
 //设置socket连接
 app.MapHub<MessageHub>("/msgHub");
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+//app.MapControllerRoute(
+//    name: "default",
+//    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.MapControllers();
 app.Run();

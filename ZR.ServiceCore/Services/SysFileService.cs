@@ -10,8 +10,12 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using ZR.Common;
+using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
+using ZR.Model.System.Model;
+using ZR.Repository;
 
 namespace ZR.ServiceCore.Services
 {
@@ -209,6 +213,29 @@ namespace ZR.ServiceCore.Services
 
             // 保存压缩后的图片到输出流
             await image.SaveAsync(outputStream, encoder);
+        }
+
+        public PagedInfo<SysFileDto> GetSysFiles(SysFileQueryDto parm)
+        {
+            var predicate = Expressionable.Create<SysFile>();
+
+            predicate = predicate.AndIF(parm.BeginCreate_time != null, it => it.Create_time >= parm.BeginCreate_time);
+            predicate = predicate.AndIF(parm.EndCreate_time != null, it => it.Create_time <= parm.EndCreate_time);
+            predicate = predicate.AndIF(parm.StoreType != null, it => it.StoreType == parm.StoreType);
+            predicate = predicate.AndIF(parm.FileId != null, it => it.Id == parm.FileId);
+            predicate = predicate.AndIF(parm.ClassifyType != null, it => it.ClassifyType == parm.ClassifyType);
+            predicate = predicate.AndIF(parm.CategoryId > 0, it => it.CategoryId == parm.CategoryId);
+
+            var query = Queryable()
+                .LeftJoin<SysFileGroup>((it, g)=> it.CategoryId == g.GroupId)
+                .Where(predicate.ToExpression())
+                .OrderBy(it => it.Id, OrderByType.Desc)
+                .Select((it, g) => new SysFileDto
+                {
+                    GroupName = g.GroupName,
+                }, true);
+
+            return query.ToPage(parm);
         }
     }
 }

@@ -5,6 +5,7 @@
     /// </summary>
     public class SysFileDto
     {
+        [JsonConverter(typeof(ValueToStringConverter))]
         public long Id { get; set; }
         /// <summary>
         /// 文件原名
@@ -56,6 +57,8 @@
         public string AccessUrl { get; set; }
         public string ClassifyType { get; set; }
 
+        public string GroupName { get; set; }
+
         public SysFileDto() { }
         public SysFileDto(string originFileName, string fileName, string ext, string fileSize, string storePath, string accessUrl, string create_by)
         {
@@ -80,5 +83,11 @@
         public int? StoreType { get; set; }
         public long? FileId { get; set; }
         public int? CategoryId { get; set; }
+    }
+
+    public class FileGroupMoveRequest
+    {
+        public int GroupId { get; set; }   // 或 int，根据你的数据库字段类型
+        public List<long> Ids { get; set; } = [];
     }
 }

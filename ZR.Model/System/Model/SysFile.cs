@@ -5,7 +5,7 @@
     public class SysFile
     {
         /// <summary>
-        /// 自增id
+        /// 文件id
         /// </summary>
         [JsonConverter(typeof(ValueToStringConverter))]
         [SugarColumn(IsPrimaryKey = true)]

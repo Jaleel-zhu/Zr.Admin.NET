@@ -1,11 +1,15 @@
 ﻿using Microsoft.AspNetCore.Http;
+using ZR.Model;
 using ZR.Model.Dto;
 using ZR.Model.System;
+using ZR.Model.System.Dto;
 
 namespace ZR.ServiceCore.Services
 {
     public interface ISysFileService : IBaseService<SysFile>
     {
+        PagedInfo<SysFileDto> GetSysFiles(SysFileQueryDto parm);
+
         Task<long> InsertFile(SysFile file);
 
         /// <summary>

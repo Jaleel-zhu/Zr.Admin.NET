@@ -31,15 +31,7 @@ namespace ZR.Admin.WebApi.Controllers
         [ActionPermissionFilter(Permission = "tool:file:list")]
         public IActionResult QuerySysFile([FromQuery] SysFileQueryDto parm)
         {
-            var predicate = Expressionable.Create<SysFile>();
-
-            predicate = predicate.AndIF(parm.BeginCreate_time != null, it => it.Create_time >= parm.BeginCreate_time);
-            predicate = predicate.AndIF(parm.EndCreate_time != null, it => it.Create_time <= parm.EndCreate_time);
-            predicate = predicate.AndIF(parm.StoreType != null, m => m.StoreType == parm.StoreType);
-            predicate = predicate.AndIF(parm.FileId != null, m => m.Id == parm.FileId);
-            predicate = predicate.AndIF(parm.ClassifyType != null, m => m.ClassifyType == parm.ClassifyType);
-
-            var response = _SysFileService.GetPages(predicate.ToExpression(), parm, x => x.Id, OrderByType.Desc);
+            var response = _SysFileService.GetSysFiles(parm);
             return SUCCESS(response);
         }
 
@@ -124,6 +116,28 @@ namespace ZR.Admin.WebApi.Controllers
 
             string sFileName = ExportExcel(list, "SysFile", "文件存储");
             return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+        }
+
+        /// <summary>
+        /// 移动文件
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("move")]
+        [ActionPermissionFilter(Permission = "tool:file:edit")]
+        [Log(Title = "移动文件", BusinessType = BusinessType.UPDATE)]
+        public IActionResult MoveSysFile([FromBody] FileGroupMoveRequest dto)
+        {
+            if (dto == null || dto.Ids.Count <= 0)
+            {
+                return ToResponse(ApiResult.Error($"移动失败Id 不能为空"));
+            }
+
+            var response = _SysFileService.Update(w => dto.Ids.Contains(w.Id), it => new SysFile()
+            {
+                CategoryId = dto.GroupId
+            });
+
+            return ToResponse(response);
         }
     }
 }
