@@ -13,6 +13,6 @@
 		<PackageReference Include="Mapster" Version="7.4.0" />
 		<PackageReference Include="MySqlConnector" Version="2.4.0" />
 		<PackageReference Include="SqlSugar.IOC" Version="2.0.1" />
-		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.202" />
+		<PackageReference Include="SqlSugarCoreNoDrive" Version="5.1.4.207" />
 	</ItemGroup>
 </Project>
