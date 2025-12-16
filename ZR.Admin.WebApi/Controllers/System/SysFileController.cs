@@ -110,12 +110,12 @@ namespace ZR.Admin.WebApi.Controllers
         [Log(BusinessType = BusinessType.EXPORT, IsSaveResponseData = false, Title = "文件存储")]
         [HttpGet("export")]
         [ActionPermissionFilter(Permission = "tool:file:export")]
-        public IActionResult Export()
+        public IActionResult Export([FromQuery] SysFileQueryDto param)
         {
-            var list = _SysFileService.GetAll();
+            var list = _SysFileService.GetSysFiles(param);
 
-            string sFileName = ExportExcel(list, "SysFile", "文件存储");
-            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+            var result = ExportExcelMini(list.Result, "file", "文件存储");
+            return ExportExcel(result.Item2, result.Item1);
         }
 
         /// <summary>

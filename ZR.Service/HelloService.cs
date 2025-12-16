@@ -67,7 +67,7 @@ namespace ZR.Service
         /// </summary>
         /// <param name="userDto"></param>
         /// <returns></returns>
-        [Verify]
+        //[Verify]
         public ApiResult SayHello2([FromBody]SysUserDto userDto)
         {
             var user = userService.GetFirst(f => f.UserId == 2);
