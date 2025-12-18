@@ -111,9 +111,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         public IActionResult Export()
         {
             var list = SysDictService.GetAll();
-
-            string sFileName = ExportExcel(list, "sysdictType", "字典");
-            return SUCCESS(new { path = "/export/" + sFileName, fileName = sFileName });
+            var result = ExportExcelMini(list, "sysdictType", "字典");
+            return ExportExcel(result.Item2, result.Item1);
         }
     }
 }
