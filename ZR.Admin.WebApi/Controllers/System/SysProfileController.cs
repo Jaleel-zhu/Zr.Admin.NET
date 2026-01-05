@@ -106,22 +106,23 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 修改头像
         /// </summary>
-        /// <param name="formFile"></param>
+        /// <param name="picture"></param>
         /// <returns></returns>
         [HttpPost("Avatar")]
+        [Consumes("multipart/form-data")]
         [ActionPermissionFilter(Permission = "common")]
         [Log(Title = "修改头像", BusinessType = BusinessType.UPDATE, IsSaveRequestData = false)]
-        public async Task<IActionResult> Avatar([FromForm(Name = "picture")] IFormFile formFile)
+        public async Task<IActionResult> Avatar(IFormFile picture)
         {
             long userId = HttpContext.GetUId();
-            if (formFile == null) throw new CustomException("请选择文件");
+            if (picture == null) throw new CustomException("请选择文件");
             Model.Dto.UploadDto dto = new()
             {
                 FileDir = "avatar",
                 ClassifyType = "avatar",
                 UserName = HttpContext.GetName()
             };
-            SysFile file = await FileService.SaveFileToLocal(hostEnvironment.WebRootPath, dto, dto.UserName, formFile);
+            SysFile file = await FileService.SaveFileToLocal(hostEnvironment.WebRootPath, dto, dto.UserName, picture);
 
             UserService.UpdatePhoto(new SysUser() { Avatar = file.AccessUrl, UserId = userId });
             return SUCCESS(new { imgUrl = file.AccessUrl });

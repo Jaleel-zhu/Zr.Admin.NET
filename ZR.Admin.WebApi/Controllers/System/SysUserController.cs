@@ -165,15 +165,16 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// <summary>
         /// 导入
         /// </summary>
-        /// <param name="formFile">使用IFromFile必须使用name属性否则获取不到文件</param>
+        /// <param name="file">使用IFromFile必须使用name属性否则获取不到文件</param>
         /// <returns></returns>
         [HttpPost("importData")]
+        [Consumes("multipart/form-data")]
         [Log(Title = "用户导入", BusinessType = BusinessType.IMPORT, IsSaveRequestData = false, IsSaveResponseData = true)]
         [ActionPermissionFilter(Permission = "system:user:import")]
-        public IActionResult ImportData([FromForm(Name = "file")] IFormFile formFile)
+        public IActionResult ImportData(IFormFile file)
         {
             List<SysUser> users = new();
-            using (var stream = formFile.OpenReadStream())
+            using (var stream = file.OpenReadStream())
             {
                 users = stream.Query<SysUser>(startCell: "A2").ToList();
             }

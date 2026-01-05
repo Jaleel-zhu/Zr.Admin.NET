@@ -165,16 +165,17 @@ namespace ZR.Admin.WebApi.Controllers
         /// <summary>
         /// 导入
         /// </summary>
-        /// <param name="formFile"></param>
+        /// <param name="file"></param>
         /// <returns></returns>
         [HttpPost("importData")]
+        [Consumes("multipart/form-data")]
         [Log(Title = "多语言设置导入", BusinessType = BusinessType.IMPORT, IsSaveRequestData = false, IsSaveResponseData = true)]
         [ActionPermissionFilter(Permission = "system:lang:import")]
-        public IActionResult ImportData([FromForm(Name = "file")] IFormFile formFile)
+        public IActionResult ImportData(IFormFile file)
         {
-            List<CommonLang> list = new();
+            List<CommonLang> list = [];
             var nowTime = DateTime.Now;
-            using (var stream = formFile.OpenReadStream())
+            using (var stream = file.OpenReadStream())
             {
                 var rows = stream.Query(startCell: "A2").ToList();
 
