@@ -19,7 +19,7 @@ namespace ZR.ServiceCore.Middleware
         private readonly ILogger<JwtAuthMiddleware> _logger;
         private readonly OptionsSetting _options;
         private static readonly string[] _whitelistPaths = Array.Empty<string>();
-        
+
         // Token 刷新阈值（分钟）
         private int TOKEN_REFRESH_THRESHOLD_MINUTES = 5;
 
@@ -34,7 +34,7 @@ namespace ZR.ServiceCore.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             var path = context.Request.Path.Value ?? string.Empty;
-            
+
             // 如果请求是带扩展名的（即静态资源）
             if (path.Contains('.'))
             {
@@ -63,29 +63,22 @@ namespace ZR.ServiceCore.Middleware
 
             if (loginUser != null)
             {
-                try
-                {
-                    // 尝试刷新 Token
-                    await TryRefreshTokenAsync(context, loginUser);
+                // 尝试刷新 Token（刷新失败在方法内记录，不影响主流程）
+                await TryRefreshTokenAsync(context, loginUser);
 
-                    // 挂载到 context.User
-                    var identity = new ClaimsIdentity(JwtUtil.AddClaims(loginUser), JwtBearerDefaults.AuthenticationScheme);
-                    context.User = new ClaimsPrincipal(identity);
+                // 挂载到 context.User
+                var identity = new ClaimsIdentity(JwtUtil.AddClaims(loginUser), JwtBearerDefaults.AuthenticationScheme);
+                context.User = new ClaimsPrincipal(identity);
 
-                    await _next(context);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"处理用户 {loginUser.UserName} 的请求时发生异常");
-                    await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.GLOBAL_ERROR, "请求处理失败"));
-                }
+                // 让后续异常交给全局异常中间件处理
+                await _next(context);
             }
             else
             {
                 string ip = HttpContextExtension.GetClientUserIp(context);
                 string msg = $"请求访问[{path}]失败，Token无效或未登录，IP:{ip}";
                 _logger.LogWarning(msg);
-                
+
                 await context.Response.WriteAsJsonAsync(ApiResult.Error(ResultCode.DENY, "Token无效或未登录"));
             }
         }
@@ -105,12 +98,12 @@ namespace ZR.ServiceCore.Middleware
                 : loginUser.ExpireTime.ToUniversalTime();
 
             var ts = expireUtc - now;
-            
+
             // Token 即将过期但还未过期时才刷新
             if (ts.TotalMinutes > 0 && ts.TotalMinutes < TOKEN_REFRESH_THRESHOLD_MINUTES)
             {
                 var cacheKey = $"token_refresh_{loginUser.UserId}";
-                
+
                 // 使用缓存防止并发刷新
                 if (!CacheHelper.Exists(cacheKey))
                 {
@@ -118,9 +111,9 @@ namespace ZR.ServiceCore.Middleware
                     {
                         // 设置缓存锁，防止并发刷新（锁定时间略长于阈值）
                         CacheHelper.SetCache(cacheKey, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), TOKEN_REFRESH_THRESHOLD_MINUTES + 1);
-                        
+
                         var newToken = JwtUtil.GenerateJwtToken(JwtUtil.AddClaims(loginUser));
-                        
+
                         // 设置响应头允许前端读取自定义 Header
                         string osType = context.Request.Headers["os"];
                         if (!string.IsNullOrEmpty(osType) || context.Request.Headers.ContainsKey("Origin"))
