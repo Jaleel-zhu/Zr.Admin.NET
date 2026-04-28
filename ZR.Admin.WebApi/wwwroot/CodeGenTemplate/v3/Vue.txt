@@ -430,7 +430,6 @@ $elseif(column.HtmlType == "radio" || column.HtmlType == "selectRadio" || column
                   :key="item.dictValue" 
                   :label="item.dictLabel" 
                   :value="${value}"></el-option>
-              </el-select>
             </template>
           </el-table-column>
 $elseif(column.HtmlType == "switch")
@@ -522,7 +521,6 @@ $end
 ])
 const total = ref(0)
 const dataList = ref([])
-const queryRef = ref()
 const defaultTime = ref([new Date(2000, 1, 1, 0, 0, 0), new Date(2000, 2, 1, 23, 59, 59)])
 
 $foreach(item in genTable.Columns)
@@ -648,7 +646,6 @@ ${end}
 }
 
 /*************** form操作 ***************/
-const formRef = ref()
 const title = ref('')
 // 操作类型 1、add 2、edit 3、view
 const opertype = ref(0)
@@ -660,7 +657,7 @@ const state = reactive({
   form: {},
   rules: {
 $foreach(column in genTable.Columns)
-$if(column.IsRequired && column.IsPk && replaceDto.useSnowflakeId)
+$if(column.IsRequired && column.IsPK && replaceDto.useSnowflakeId)
     ${column.CsharpFieldFl}: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.HtmlType == "select")"change"$else"blur"$end }],
 $elseif(column.IsRequired && column.IsIncrement == false)
     ${column.CsharpFieldFl}$if(column.HtmlType == "selectMulti")Checked$end: [{ required: true, message: "${column.ColumnComment}不能为空", trigger: $if(column.HtmlType == "select")"change"$else"blur"$end
