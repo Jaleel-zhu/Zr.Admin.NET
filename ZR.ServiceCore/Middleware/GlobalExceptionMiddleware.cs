@@ -23,7 +23,7 @@ namespace ZR.ServiceCore.Middleware
         private readonly ISysOperLogService SysOperLogService;
 
         static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-        private readonly textJson.JsonSerializerOptions options = new()
+        private static readonly textJson.JsonSerializerOptions JsonOptions = new()
         {
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             PropertyNamingPolicy = textJson.JsonNamingPolicy.CamelCase,
@@ -94,9 +94,11 @@ namespace ZR.ServiceCore.Middleware
                 apiResult.Add("error", "请在issue里面寻找答案或者官方文档查看常见问题：https://gitee.com/izory/ZrAdminNetCore/issues");
             }
 #endif
-            string responseResult = textJson.JsonSerializer.Serialize(apiResult, options);
+            string responseResult = textJson.JsonSerializer.Serialize(apiResult, JsonOptions);
             string ip = HttpContextExtension.GetClientUserIp(context);
             var ip_info = IpTool.Search(ip);
+            string operLocation = ip_info == null ? string.Empty : $"{ip_info.Province} {ip_info.City}";
+            string errorMessage = string.IsNullOrWhiteSpace(error) ? msg : error;
 
             SysOperLog sysOperLog = new()
             {
@@ -105,9 +107,9 @@ namespace ZR.ServiceCore.Middleware
                 OperUrl = HttpContextExtension.GetRequestUrl(context),
                 RequestMethod = context.Request.Method,
                 JsonResult = responseResult,
-                ErrorMsg = string.IsNullOrEmpty(error) ? msg : error,
+                ErrorMsg = errorMessage,
                 OperName = HttpContextExtension.GetName(context),
-                OperLocation = ip_info.Province + " " + ip_info.City,
+                OperLocation = operLocation,
                 OperTime = DateTime.Now,
                 OperParam = HttpContextExtension.GetRequestValue(context, context.Request.Method)
             };
@@ -123,10 +125,10 @@ namespace ZR.ServiceCore.Middleware
                     sysOperLog.JsonResult = logAttribute.IsSaveResponseData ? sysOperLog.JsonResult : "";
                 }
             }
-            LogEventInfo ei = new(logLevel, "GlobalExceptionMiddleware", error)
+            LogEventInfo ei = new(logLevel, "GlobalExceptionMiddleware", errorMessage)
             {
                 Exception = ex,
-                Message = error
+                Message = errorMessage
             };
             ei.Properties["status"] = 1;//走正常返回都是通过走GlobalExceptionFilter不通过
             ei.Properties["jsonResult"] = responseResult;
@@ -134,18 +136,36 @@ namespace ZR.ServiceCore.Middleware
             ei.Properties["user"] = sysOperLog.OperName;
 
             Logger.Log(ei);
-            context.Response.ContentType = "text/json;charset=utf-8";
-            await context.Response.WriteAsync(responseResult, System.Text.Encoding.UTF8);
+            if (!context.Response.HasStarted)
+            {
+                context.Response.ContentType = "application/json;charset=utf-8";
+                await context.Response.WriteAsync(responseResult, System.Text.Encoding.UTF8);
+            }
 
             string errorMsg = $"> 操作人：{sysOperLog.OperName}" +
                 $"\n> 操作地区：{sysOperLog.OperIp}({sysOperLog.OperLocation})" +
                 $"\n> 操作模块：{sysOperLog.Title}" +
                 $"\n> 操作地址：{sysOperLog.OperUrl}" +
-                $"\n> 错误信息：{msg}\n\n> {error}";
+                $"\n> 错误信息：{msg}\n\n> {errorMessage}";
 
-            SysOperLogService.InsertOperlog(sysOperLog);
+            try
+            {
+                SysOperLogService.InsertOperlog(sysOperLog);
+            }
+            catch (Exception logEx)
+            {
+                Logger.Error(logEx, "记录操作日志失败");
+            }
+
             if (!notice) return;
-            WxNoticeHelper.SendMsg("系统异常", errorMsg, msgType: WxNoticeHelper.MsgType.markdown);
+            try
+            {
+                WxNoticeHelper.SendMsg("系统异常", errorMsg, msgType: WxNoticeHelper.MsgType.markdown);
+            }
+            catch (Exception noticeEx)
+            {
+                Logger.Error(noticeEx, "发送异常通知失败");
+            }
         }
 
         public static Endpoint GetEndpoint(HttpContext context)

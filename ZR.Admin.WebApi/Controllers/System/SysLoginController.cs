@@ -384,6 +384,8 @@ namespace ZR.Admin.WebApi.Controllers.System
         /// </summary>
         /// <returns></returns>
         [Route("/unlockscreen")]
+        [HttpPost]
+        [Log(Title = "解锁屏幕")]
         public IActionResult Unlockscreen([FromBody] LoginBodyDto dto)
         {
             if (dto == null || dto.Password.IsEmpty())
