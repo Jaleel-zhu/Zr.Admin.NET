@@ -225,6 +225,7 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.AndIF(parm.FileId != null, it => it.Id == parm.FileId);
             predicate = predicate.AndIF(parm.ClassifyType != null, it => it.ClassifyType == parm.ClassifyType);
             predicate = predicate.AndIF(parm.CategoryId > 0, it => it.CategoryId == parm.CategoryId);
+            predicate = predicate.AndIF(parm.CategoryId == -1, it => it.CategoryId == 0);
 
             var query = Queryable()
                 .LeftJoin<SysFileGroup>((it, g)=> it.CategoryId == g.GroupId)

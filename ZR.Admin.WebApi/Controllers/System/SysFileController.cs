@@ -49,6 +49,7 @@ namespace ZR.Admin.WebApi.Controllers
             predicate = predicate.AndIF(parm.FileId != null, m => m.Id == parm.FileId);
             predicate = predicate.AndIF(parm.ClassifyType != null, m => m.ClassifyType == parm.ClassifyType);
             predicate = predicate.AndIF(parm.CategoryId > 0, m => m.CategoryId == parm.CategoryId);
+            predicate = predicate.AndIF(parm.CategoryId == -1, m => m.CategoryId == 0);
             predicate = predicate.And(m => m.FileType.StartsWith("image/", StringComparison.OrdinalIgnoreCase));
 
             var response = _SysFileService.GetPages(predicate.ToExpression(), parm, x => x.Id, OrderByType.Desc);
