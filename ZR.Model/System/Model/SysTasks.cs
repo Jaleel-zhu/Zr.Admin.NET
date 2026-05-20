@@ -106,6 +106,32 @@
         /// 最后运行时间
         /// </summary>
         public DateTime? LastRunTime { get; set; }
+
+        /// <summary>
+        /// 最后成功时间
+        /// </summary>
+        public DateTime? LastSuccessTime { get; set; }
+
+        /// <summary>
+        /// 最后失时间
+        /// </summary>
+        public DateTime? LastFailTime { get; set; }
+
+        /// <summary>
+        /// 执行机器名称
+        /// </summary>
+        public string ServerName { get; set; }
+
+        /// <summary>
+        /// 最后运行状态 0、成功 1、失败
+        /// </summary>
+        public string LastRunStatus { get; set; }
+
+        /// <summary>
+        /// 最后运行错误信息
+        /// </summary>
+        public string LastErrorMsg { get; set; }
+
         /// <summary>
         /// api执行地址
         /// </summary>

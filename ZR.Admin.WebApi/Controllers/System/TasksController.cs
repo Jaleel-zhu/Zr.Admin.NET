@@ -35,6 +35,16 @@ namespace ZR.Admin.WebApi.Controllers
         public IActionResult ListTask([FromQuery] TasksQueryDto parm)
         {
             var response = _tasksQzService.SelectTaskList(parm);
+
+            var totalRuns = response.Result.Sum(x => x.RunTimes);
+            var successRuns = response.Result.Count(x => x.LastRunStatus == "0");
+            var failureRuns = response.Result.Count(x => x.LastRunStatus == "1");
+            var totalTasks = response.Result.Count();
+            response.Extra.Add("totalRuns", totalRuns);
+            response.Extra.Add("successRuns", successRuns);
+            response.Extra.Add("failureRuns", failureRuns);
+            response.Extra.Add("successRate", totalTasks > 0 ? Math.Round((double)successRuns / totalTasks * 100, 2) : 0);
+            response.Extra.Add("failureRate", totalTasks > 0 ? Math.Round((double)failureRuns / totalTasks * 100, 2) : 0);
             return SUCCESS(response, TIME_FORMAT_FULL);
         }
 

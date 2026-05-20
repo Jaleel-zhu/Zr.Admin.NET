@@ -16,50 +16,21 @@ namespace ZR.Tasks
         /// 日志接口
         /// </summary>
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private const int MaxJobMessageLength = 2000;
+        private const string SuccessMessage = "success";
 
         /// <summary>
         /// 执行指定任务
         /// </summary>
         /// <param name="context">作业上下文</param>
         /// <param name="job">业务逻辑方法</param>
-        public async Task<SysTasksLog> ExecuteJob(IJobExecutionContext context, Func<Task> job)
+        public Task<SysTasksLog> ExecuteJob(IJobExecutionContext context, Func<Task> job)
         {
-            double elapsed = 0;
-            int status = 0;
-            string logMsg;
-            try
+            return ExecuteInternal(context, async () =>
             {
-                //var s = context.Trigger.Key.Name;
-                //记录Job时间
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-                //执行任务
                 await job();
-                stopwatch.Stop();
-                elapsed = stopwatch.Elapsed.TotalMilliseconds;
-                logMsg = "success";
-            }
-            catch (Exception ex)
-            {
-                JobExecutionException e2 = new(ex)
-                {
-                    //true  是立即重新执行任务 
-                    RefireImmediately = true
-                };
-                status = 1;
-                logMsg = $"Job Run Fail，Exception：{ex.Message}";
-                WxNoticeHelper.SendMsg("任务执行出错", logMsg);
-            }
-
-            var logModel = new SysTasksLog()
-            {
-                Elapsed = elapsed,
-                Status = status.ToString(),
-                JobMessage = logMsg
-            };
-
-            await RecordTaskLog(context, logModel);
-            return logModel;
+                return SuccessMessage;
+            });
         }
 
         /// <summary>
@@ -67,44 +38,67 @@ namespace ZR.Tasks
         /// </summary>
         /// <param name="context">作业上下文</param>
         /// <param name="job">业务逻辑方法</param>
-        public async Task<SysTasksLog> ExecuteJob(IJobExecutionContext context, Func<Task<string>> job)
+        public Task<SysTasksLog> ExecuteJob(IJobExecutionContext context, Func<Task<string>> job)
         {
-            double elapsed = 0;
-            int status = 0;
-            string logMsg;
+            return ExecuteInternal(context, job);
+        }
+
+        private async Task<SysTasksLog> ExecuteInternal(IJobExecutionContext context, Func<Task<string>> job)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            var status = 0;
+            var logMsg = SuccessMessage;
+            Exception jobException = null;
+
             try
             {
-                //var s = context.Trigger.Key.Name;
-                //记录Job时间
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-                //执行任，并返回结果
-                string result = await job();
-                stopwatch.Stop();
-                elapsed = stopwatch.Elapsed.TotalMilliseconds;
-                logMsg = result.Length <= 2000 ? result : result.Substring(0, 2000);
+                var result = await job();
+                logMsg = TruncateMessage(result);
             }
             catch (Exception ex)
             {
-                JobExecutionException e2 = new(ex)
-                {
-                    //true  是立即重新执行任务 
-                    RefireImmediately = true
-                };
                 status = 1;
-                logMsg = $"Job Run Fail，Exception：{ex.Message}";
+                jobException = ex;
+                logMsg = TruncateMessage($"Job Run Fail，Exception：{ex.Message}");
+                logger.Error(ex, "任务执行出错");
                 WxNoticeHelper.SendMsg("任务执行出错", logMsg);
             }
-
-            var logModel = new SysTasksLog()
+            finally
             {
-                Elapsed = elapsed,
+                stopwatch.Stop();
+            }
+
+            var logModel = new SysTasksLog
+            {
+                Elapsed = stopwatch.Elapsed.TotalMilliseconds,
                 Status = status.ToString(),
-                JobMessage = logMsg
+                JobMessage = logMsg,
+                Exception = jobException?.ToString()
             };
 
             await RecordTaskLog(context, logModel);
+
+            if (jobException != null)
+            {
+                throw jobException is JobExecutionException quartzEx
+                    ? quartzEx
+                    : new JobExecutionException(jobException)
+                    {
+                        // 仅立即重试一次，避免持续失败导致无限重试
+                        RefireImmediately = context.RefireCount < 1
+                    };
+            }
+
             return logModel;
+        }
+
+        private static string TruncateMessage(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return SuccessMessage;
+            }
+            return message.Length <= MaxJobMessageLength ? message : message[..MaxJobMessageLength];
         }
 
         /// <summary>
@@ -119,18 +113,22 @@ namespace ZR.Tasks
 
             // 可以直接获取 JobDetail 的值
             IJobDetail job = context.JobDetail;
+            var now = DateTime.Now;
 
             logModel.InvokeTarget = job.JobType.FullName;
             logModel = await tasksLogService.AddTaskLog(job.Key.Name, logModel);
-            //成功后执行次数+1
-            if (logModel.Status == "0")
+
+            await taskQzService.UpdateAsync(f => new SysTasks()
             {
-                await taskQzService.UpdateAsync(f => new SysTasks()
-                {
-                    RunTimes = f.RunTimes + 1,
-                    LastRunTime = DateTime.Now
-                }, f => f.ID == job.Key.Name);
-            }
+                RunTimes = f.RunTimes + 1,
+                LastRunTime = now,
+                LastRunStatus = logModel.Status,
+                LastErrorMsg = logModel.Status == "1" ? logModel.JobMessage : null,
+                LastFailTime = logModel.Status == "1" ? now : f.LastFailTime,
+                LastSuccessTime = logModel.Status == "0" ? now : f.LastSuccessTime,
+                ServerName = Environment.MachineName
+            }, f => f.ID == job.Key.Name);
+
             logger.Info($"执行任务【{job.Key.Name}|{logModel.JobName}】结果={logModel.JobMessage}");
         }
     }
