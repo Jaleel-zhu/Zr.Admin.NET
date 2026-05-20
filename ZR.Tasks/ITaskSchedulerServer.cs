@@ -18,7 +18,7 @@ namespace ZR.Tasks
 
 		Task<ApiResult> DeleteTaskScheduleAsync(SysTasks tasksQz);
 
-		Task<ApiResult> RunTaskScheduleAsync(SysTasks tasksQz);
+		Task<ApiResult> RunTaskScheduleAsync(SysTasks tasksQz, string operatorName);
 
 		Task<ApiResult> UpdateTaskScheduleAsync(SysTasks tasksQz);
 	}

@@ -69,5 +69,16 @@
         /// 链路追踪id
         /// </summary>
         public string TraceId { get; set; }
+
+        /// <summary>
+        /// 是否为手动触发（0-系统触发/定时；1-用户手动触发）
+        /// </summary>
+        [SugarColumn(DefaultValue = "0")]
+        public int IsManual { get; set; }
+
+        /// <summary>
+        /// 触发来源（cron/manual/api/retry）
+        /// </summary>
+        public string TriggerSource { get; set; }
     }
 }

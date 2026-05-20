@@ -122,7 +122,6 @@ namespace ZR.Tasks
         {
             try
             {
-                var userName = App.HttpContext?.GetName() ?? "system";
                 JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
                 if (await _scheduler.Result.CheckExists(jobKey))
                 {
@@ -157,8 +156,11 @@ namespace ZR.Tasks
                 //3、创建任务。传入反射出来的执行程序集
                 IJobDetail job = new JobDetailImpl(tasksQz.ID, tasksQz.JobGroup, jobType);
                 job.JobDataMap.Add("JobParam", tasksQz.JobParams);
-                job.JobDataMap.Add("UserName", userName);
-                job.JobDataMap.Add("TraceId", App.HttpContext.TraceIdentifier);
+                job.JobDataMap.Add("UserName", "system");
+                job.JobDataMap.Add("TraceId", App.HttpContext?.TraceIdentifier ?? System.Guid.NewGuid().ToString("N"));
+                // 标记为系统调度的任务
+                job.JobDataMap.Add("IsManual", 0);
+                job.JobDataMap.Add("TriggerSource", "cron");
 
                 ITrigger trigger;
 
@@ -267,8 +269,9 @@ namespace ZR.Tasks
         /// 立即运行
         /// </summary>
         /// <param name="tasksQz"></param>
+        /// <param name="operatorName"></param>
         /// <returns></returns>
-        public async Task<ApiResult> RunTaskScheduleAsync(SysTasks tasksQz)
+        public async Task<ApiResult> RunTaskScheduleAsync(SysTasks tasksQz, string operatorName)
         {
             try
             {
@@ -282,7 +285,7 @@ namespace ZR.Tasks
                     }
                     else
                     {
-                        return await RunTaskOnceAsync(tasksQz);
+                        return await RunTaskOnceAsync(tasksQz, operatorName);
                     }
                 }
 
@@ -291,7 +294,16 @@ namespace ZR.Tasks
                 {
                     return new ApiResult(110, $"未找到触发器[{jobKey.Name}]");
                 }
-                await _scheduler.Result.TriggerJob(jobKey);
+
+                // 手动立即执行时，覆盖本次触发的执行人和标记
+                var manualData = new JobDataMap
+                {
+                    { "UserName", string.IsNullOrWhiteSpace(operatorName) ? "system" : operatorName },
+                    { "TraceId", App.HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString("N") },
+                    { "IsManual", 1 },
+                    { "TriggerSource", "manual" }
+                };
+                await _scheduler.Result.TriggerJob(jobKey, manualData);
 
                 return ApiResult.Success($"运行计划任务:【{tasksQz.Name}】成功");
             }
@@ -305,8 +317,9 @@ namespace ZR.Tasks
         /// 任务未启动时，执行一次
         /// </summary>
         /// <param name="tasksQz"></param>
+        /// <param name="operatorName"></param>
         /// <returns></returns>
-        private async Task<ApiResult> RunTaskOnceAsync(SysTasks tasksQz)
+        private async Task<ApiResult> RunTaskOnceAsync(SysTasks tasksQz, string operatorName)
         {
             try
             {
@@ -330,9 +343,11 @@ namespace ZR.Tasks
                     .UsingJobData("JobParam", tasksQz.JobParams ?? string.Empty)
                     .Build();
 
-                var userName = App.HttpContext?.GetName() ?? "system";
-                job.JobDataMap.Add("UserName", userName);
+                job.JobDataMap.Add("UserName", operatorName);
                 job.JobDataMap.Add("TraceId", App.HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString("N"));
+                // 一次性触发标记为手动执行
+                job.JobDataMap.Add("IsManual", 1);
+                job.JobDataMap.Add("TriggerSource", "manual");
 
                 ITrigger trigger = TriggerBuilder.Create()
                     .WithIdentity(triggerKey)

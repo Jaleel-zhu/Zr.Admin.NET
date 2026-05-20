@@ -1,7 +1,6 @@
 using Infrastructure;
 using NLog;
 using Quartz;
-using SqlSugar;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -118,8 +117,20 @@ namespace ZR.Tasks
             var now = DateTime.Now;
 
             logModel.InvokeTarget = job.JobType.FullName;
-            logModel.TraceId = job.JobDataMap.GetString("TraceId");
-            logModel.Operator = job.JobDataMap.GetString("UserName");
+            var mergedData = context.MergedJobDataMap;
+            logModel.TraceId = mergedData.GetString("TraceId") ?? Activity.Current?.TraceId.ToString();
+            logModel.Operator = mergedData.GetString("UserName");
+            try
+            {
+                var isManualObj = mergedData.ContainsKey("IsManual") ? mergedData.Get("IsManual") : null;
+                if (isManualObj != null)
+                {
+                    logModel.IsManual = Convert.ToInt32(isManualObj);
+                }
+            }
+            catch { }
+
+            logModel.TriggerSource = mergedData.GetString("TriggerSource");
             logModel = await tasksLogService.AddTaskLog(job.Key.Name, logModel);
 
             await taskQzService.UpdateAsync(f => new SysTasks()

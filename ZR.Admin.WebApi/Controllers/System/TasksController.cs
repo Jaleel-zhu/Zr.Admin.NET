@@ -250,8 +250,9 @@ namespace ZR.Admin.WebApi.Controllers
             {
                 throw new CustomException("任务不存在");
             }
+            var userName = HttpContext.GetName();
             var tasksQz = await _tasksQzService.GetFirstAsync(m => m.ID == id);
-            var taskResult = await _schedulerServer.RunTaskScheduleAsync(tasksQz);
+            var taskResult = await _schedulerServer.RunTaskScheduleAsync(tasksQz, userName);
 
             return ToResponse(taskResult);
         }
