@@ -1,14 +1,13 @@
-﻿using Infrastructure.Model;
+﻿using Infrastructure;
+using Infrastructure.Extensions;
+using Infrastructure.Model;
 using NLog;
 using Quartz;
 using Quartz.Impl;
-using Quartz.Impl.Matchers;
 using Quartz.Impl.Triggers;
 using Quartz.Spi;
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using ZR.Model.System;
@@ -34,6 +33,26 @@ namespace ZR.Tasks
             _jobFactory = jobFactory;
         }
 
+        private static NameValueCollection GetQuartzConfig()
+        {
+            NameValueCollection collection = new NameValueCollection();
+            var section = App.Configuration.GetSection("Quartz");
+            foreach (var item in section.GetChildren())
+            {
+                if (!string.IsNullOrWhiteSpace(item.Value))
+                {
+                    collection[item.Key] = item.Value;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(collection["quartz.serializer.type"]))
+            {
+                collection["quartz.serializer.type"] = "binary";
+            }
+
+            return collection;
+        }
+
         /// <summary>
         /// 开启计划任务
         /// 参考文章：https://www.quartz-scheduler.net/documentation/quartz-3.x/configuration/reference.html#datasources-ado-net-jobstores
@@ -46,22 +65,7 @@ namespace ZR.Tasks
                 return _scheduler;
             }
 
-            NameValueCollection collection = new NameValueCollection
-            {
-                { "quartz.serializer.type","binary" },
-                //quartz参数
-                //{ "quartz.scheduler.instanceId", "AUTO" },
-                //{ "quartz.serializer.type","json" },
-                ////下面为指定quartz持久化数据库的配置
-                //{ "quartz.jobStore.type","Quartz.Impl.AdoJobStore.JobStoreTX, Quartz" },
-                //{ "quartz.jobStore.tablePrefix","QRTZ_"},
-                //{ "quartz.jobStore.driverDelegateType", "Quartz.Impl.AdoJobStore.MySQLDelegate, Quartz"},
-                //{ "quartz.jobStore.useProperties", "true"},
-                //{ "quartz.jobStore.dataSource", "myDS" },
-                //{ "quartz.dataSource.myDS.connectionString", @"server=xxx.xxx.xxx.xxx;port=3306;database=Admin;uid=zrry;pwd=********;Charset=utf8;"},
-                //{ "quartz.dataSource.myDS.provider", "MySql" },
-            };
-
+            NameValueCollection collection = GetQuartzConfig();
             StdSchedulerFactory factory = new StdSchedulerFactory(collection);
 
             return _scheduler = factory.GetScheduler();
@@ -118,6 +122,7 @@ namespace ZR.Tasks
         {
             try
             {
+                var userName = App.HttpContext?.GetName() ?? "system";
                 JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
                 if (await _scheduler.Result.CheckExists(jobKey))
                 {
@@ -152,6 +157,9 @@ namespace ZR.Tasks
                 //3、创建任务。传入反射出来的执行程序集
                 IJobDetail job = new JobDetailImpl(tasksQz.ID, tasksQz.JobGroup, jobType);
                 job.JobDataMap.Add("JobParam", tasksQz.JobParams);
+                job.JobDataMap.Add("UserName", userName);
+                job.JobDataMap.Add("TraceId", App.HttpContext.TraceIdentifier);
+
                 ITrigger trigger;
 
                 //4、创建一个触发器
@@ -265,10 +273,17 @@ namespace ZR.Tasks
             try
             {
                 JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
-                List<JobKey> jobKeys = _scheduler.Result.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(tasksQz.JobGroup)).Result.ToList();
-                if (jobKeys == null || jobKeys.Count == 0)
+                bool exists = await _scheduler.Result.CheckExists(jobKey);
+                if (!exists)
                 {
-                    await AddTaskScheduleAsync(tasksQz);
+                    if (tasksQz.IsStart == 1)
+                    {
+                        await AddTaskScheduleAsync(tasksQz);
+                    }
+                    else
+                    {
+                        return await RunTaskOnceAsync(tasksQz);
+                    }
                 }
 
                 var triggers = await _scheduler.Result.GetTriggersOfJob(jobKey);
@@ -283,6 +298,56 @@ namespace ZR.Tasks
             catch (Exception ex)
             {
                 return new ApiResult(500, $"执行计划任务:【{tasksQz.Name}】失败，{ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 任务未启动时，执行一次
+        /// </summary>
+        /// <param name="tasksQz"></param>
+        /// <returns></returns>
+        private async Task<ApiResult> RunTaskOnceAsync(SysTasks tasksQz)
+        {
+            try
+            {
+                if (!_scheduler.Result.IsStarted)
+                {
+                    await StartTaskScheduleAsync();
+                }
+
+                Assembly assembly = Assembly.Load(new AssemblyName(tasksQz.AssemblyName));
+                Type jobType = assembly.GetType(tasksQz.AssemblyName + "." + tasksQz.ClassName);
+                if (jobType == null)
+                {
+                    return ApiResult.Error(500, $"未找到任务类型: {tasksQz.AssemblyName}.{tasksQz.ClassName}");
+                }
+
+                JobKey jobKey = new JobKey(tasksQz.ID, tasksQz.JobGroup);
+                TriggerKey triggerKey = new TriggerKey($"{tasksQz.ID}_once_{Guid.NewGuid():N}", tasksQz.JobGroup);
+
+                IJobDetail job = JobBuilder.Create(jobType)
+                    .WithIdentity(jobKey)
+                    .UsingJobData("JobParam", tasksQz.JobParams ?? string.Empty)
+                    .Build();
+
+                var userName = App.HttpContext?.GetName() ?? "system";
+                job.JobDataMap.Add("UserName", userName);
+                job.JobDataMap.Add("TraceId", App.HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString("N"));
+
+                ITrigger trigger = TriggerBuilder.Create()
+                    .WithIdentity(triggerKey)
+                    .ForJob(jobKey)
+                    .StartNow()
+                    .WithSimpleSchedule(x => x.WithIntervalInSeconds(1).WithRepeatCount(0))
+                    .Build();
+
+                await _scheduler.Result.ScheduleJob(job, trigger);
+                return ApiResult.Success($"运行计划任务:【{tasksQz.Name}】成功");
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex, $"执行一次任务失败，分组：{tasksQz.JobGroup},作业：【{tasksQz.Name}】,error：{ex.Message}");
+                return ApiResult.Error(500, $"执行一次任务:【{tasksQz.Name}】失败，{ex.Message}");
             }
         }
 

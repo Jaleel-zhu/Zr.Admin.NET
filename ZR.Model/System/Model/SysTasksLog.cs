@@ -37,7 +37,7 @@
         /// </summary>
         public string Exception { get; set; }
         /// <summary>
-        /// 
+        /// 任务消息
         /// </summary>
         public string JobMessage { get; set; }
         /// <summary>
@@ -54,5 +54,20 @@
         /// </summary>
         //[SqlSugar.SugarColumn(IsIgnore = true)]
         public double Elapsed { get; set; }
+
+        /// <summary>
+        /// 执行机器名称
+        /// </summary>
+        public string ServerName { get; set; }
+
+        /// <summary>
+        /// 操作人
+        /// </summary>
+        public string Operator { get; set; }
+
+        /// <summary>
+        /// 链路追踪id
+        /// </summary>
+        public string TraceId { get; set; }
     }
 }

@@ -1,6 +1,7 @@
 using Infrastructure;
 using NLog;
 using Quartz;
+using SqlSugar;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -73,7 +74,8 @@ namespace ZR.Tasks
                 Elapsed = stopwatch.Elapsed.TotalMilliseconds,
                 Status = status.ToString(),
                 JobMessage = logMsg,
-                Exception = jobException?.ToString()
+                Exception = jobException?.ToString(),
+                ServerName = Environment.MachineName
             };
 
             await RecordTaskLog(context, logModel);
@@ -116,6 +118,8 @@ namespace ZR.Tasks
             var now = DateTime.Now;
 
             logModel.InvokeTarget = job.JobType.FullName;
+            logModel.TraceId = job.JobDataMap.GetString("TraceId");
+            logModel.Operator = job.JobDataMap.GetString("UserName");
             logModel = await tasksLogService.AddTaskLog(job.Key.Name, logModel);
 
             await taskQzService.UpdateAsync(f => new SysTasks()
@@ -125,8 +129,7 @@ namespace ZR.Tasks
                 LastRunStatus = logModel.Status,
                 LastErrorMsg = logModel.Status == "1" ? logModel.JobMessage : null,
                 LastFailTime = logModel.Status == "1" ? now : f.LastFailTime,
-                LastSuccessTime = logModel.Status == "0" ? now : f.LastSuccessTime,
-                ServerName = Environment.MachineName
+                LastSuccessTime = logModel.Status == "0" ? now : f.LastSuccessTime
             }, f => f.ID == job.Key.Name);
 
             logger.Info($"执行任务【{job.Key.Name}|{logModel.JobName}】结果={logModel.JobMessage}");

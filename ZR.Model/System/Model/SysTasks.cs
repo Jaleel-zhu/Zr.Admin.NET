@@ -118,11 +118,6 @@
         public DateTime? LastFailTime { get; set; }
 
         /// <summary>
-        /// 执行机器名称
-        /// </summary>
-        public string ServerName { get; set; }
-
-        /// <summary>
         /// 最后运行状态 0、成功 1、失败
         /// </summary>
         public string LastRunStatus { get; set; }
