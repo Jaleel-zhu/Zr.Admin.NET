@@ -430,6 +430,7 @@ $elseif(column.HtmlType == "radio" || column.HtmlType == "selectRadio" || column
                   :key="item.dictValue" 
                   :label="item.dictLabel" 
                   :value="${value}"></el-option>
+              </el-select>
             </template>
           </el-table-column>
 $elseif(column.HtmlType == "switch")
@@ -441,7 +442,7 @@ $elseif(column.HtmlType == "switch")
 $elseif(column.HtmlType == "imageUpload")
           <el-table-column label="${labelName}" prop="${columnName}">
             <template #default="scope">
-              <UploadImage v-model="form.${columnName}" :isShowTip="false" :style="{ 'width': '50px' }" :data="{ uploadType: 1 }" />
+              <UploadImage v-model="scope.row.${columnName}" :isShowTip="false" :style="{ 'width': '50px' }" :data="{ uploadType: 1 }" />
             </template>
           </el-table-column>
 $else
@@ -514,7 +515,7 @@ $set(type = "dict")
 $set(align = "center")
 $end
 $if(column.IsList)
-  { visible: ${if(index < 9)}true${else}false${end}, align: '${align}', type: '${type}', prop: '${column.CsharpFieldFl}', label: '${column.ColumnComment}' ${showToolTipHtml} $if(column.DictType != "") ,dictType: '${column.DictType}'$end },
+  { visible: ${if(index < 9)}true${else}false${end}, type: '${type}', prop: '${column.CsharpFieldFl}', label: '${column.ColumnComment}' ${showToolTipHtml} $if(column.DictType != "") ,dictType: '${column.DictType}'$end },
 $end
 $end
   //{ visible: false, prop: 'actions', label: '操作', type: 'slot', width: '160' }
@@ -593,8 +594,10 @@ $end
     if (code == 200) {
       dataList.value = data.result
       total.value = data.totalNum
-      loading.value = false
     }
+  })
+  .finally(() => {
+      loading.value = false
   })
 }
 
@@ -638,7 +641,7 @@ $if(item.IsSort && item.CsharpField.ToLower() != item.ColumnName.ToLower())
       sort = '${item.ColumnName}'
     }
 $end
-${end}
+$end
   }
   queryParams.sort = sort
   queryParams.sortType = sortType

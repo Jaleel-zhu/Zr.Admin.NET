@@ -173,7 +173,7 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public int UpdateFile(SysFile model)
         {
-            return Update(model, t => new { t.ClassifyType, }, true);
+            return Update(model, t => new { t.ClassifyType, t.RealName, t.CategoryId }, true);
         }
 
         /// <summary>
@@ -226,9 +226,10 @@ namespace ZR.ServiceCore.Services
             predicate = predicate.AndIF(parm.ClassifyType != null, it => it.ClassifyType == parm.ClassifyType);
             predicate = predicate.AndIF(parm.CategoryId > 0, it => it.CategoryId == parm.CategoryId);
             predicate = predicate.AndIF(parm.CategoryId == -1, it => it.CategoryId == 0);
+            predicate = predicate.AndIF(parm.RealName.IsNotEmpty(), it => it.RealName.Contains(parm.RealName));
 
             var query = Queryable()
-                .LeftJoin<SysFileGroup>((it, g)=> it.CategoryId == g.GroupId)
+                .LeftJoin<SysFileGroup>((it, g) => it.CategoryId == g.GroupId)
                 .Where(predicate.ToExpression())
                 .OrderBy(it => it.Id, OrderByType.Desc)
                 .Select((it, g) => new SysFileDto

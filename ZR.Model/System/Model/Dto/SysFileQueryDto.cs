@@ -96,6 +96,7 @@
         public int? StoreType { get; set; }
         public long? FileId { get; set; }
         public int? CategoryId { get; set; }
+        public string RealName { get; set; }
     }
 
     public class FileGroupMoveRequest
