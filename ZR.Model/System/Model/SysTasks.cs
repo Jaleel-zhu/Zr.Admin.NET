@@ -51,7 +51,7 @@
         /// 任务所在类 
         /// </summary>
         [Display(Name = "任务所在类")]
-        [SugarColumn(ExtendedAttribute = ProteryConstant.NOTNULL)]
+        [SugarColumn(Length = 200, ExtendedAttribute = ProteryConstant.NOTNULL)]
         public string ClassName { get; set; }
 
         /// <summary>
@@ -120,11 +120,13 @@
         /// <summary>
         /// 最后运行状态 0、成功 1、失败
         /// </summary>
+        [SugarColumn(Length = 10)]
         public string LastRunStatus { get; set; }
 
         /// <summary>
         /// 最后运行错误信息
         /// </summary>
+        [SugarColumn(Length = 5000)]
         public string LastErrorMsg { get; set; }
 
         /// <summary>

@@ -30,11 +30,12 @@
         /// <summary>
         /// 执行状态（0正常 1失败）
         /// </summary>
-        [SugarColumn(DefaultValue = "0")]
+        [SugarColumn(DefaultValue = "0", Length = 20)]
         public string Status { get; set; }
         /// <summary>
         /// 异常
         /// </summary>
+        [SugarColumn(Length = 5000)]
         public string Exception { get; set; }
         /// <summary>
         /// 任务消息
@@ -63,6 +64,7 @@
         /// <summary>
         /// 操作人
         /// </summary>
+        [SugarColumn(Length = 100)]
         public string Operator { get; set; }
 
         /// <summary>
@@ -79,6 +81,7 @@
         /// <summary>
         /// 触发来源（cron/manual/api/retry）
         /// </summary>
+        [SugarColumn(Length = 50)]
         public string TriggerSource { get; set; }
     }
 }
