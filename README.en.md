@@ -5,7 +5,7 @@
 
 [![stars](https://gitee.com/izory/ZrAdminNetCore/badge/star.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore)
 [![fork](https://gitee.com//izory/ZrAdminNetCore/badge/fork.svg?theme=dark)](https://gitee.com/izory/ZrAdminNetCore/members)
-[![Change log](https://img.shields.io/badge/ChangeLog-20250327-yellow)](http://www.izhaorui.cn/doc/changelog.html)
+[![Change log](https://img.shields.io/badge/ChangeLog-20260418-yellow)](http://www.izhaorui.cn/doc/changelog.html)
 
 [![GitHub license](https://img.shields.io/github/license/izhaorui/ZrAdmin.NET)](https://github.com/izhaorui/ZrAdmin.NET/blob/main/LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/izhaorui/ZrAdmin.NET?style=social)](https://github.com/izhaorui/ZrAdmin.NET/stargazers)
@@ -54,12 +54,11 @@ Since it is a personal project, the funds are limited, and the experience server
 
 ## 💒 Code repository
 
-| repository | Github                                                      | Gitee                                                    |
-| ---------- | ----------------------------------------------------------- | -------------------------------------------------------- |
-| net8                | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET/tree/net8) | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore) |
-| Vue3(Hot)  | [Clone/Download](https://github.com/izhaorui/ZR.Admin.Vue3) | [Clone/Download](https://gitee.com/izory/ZRAdmin-vue)    |
-| mobile              | [contact author](http://www.izhaorui.cn/vip/)                         | [contact author](http://www.izhaorui.cn/vip/)                        |
-
+| repository | Github                                                               | Gitee                                                    |
+| ---------- | -------------------------------------------------------------------- | -------------------------------------------------------- |
+| net8       | [Clone/Download](https://github.com/izhaorui/Zr.Admin.NET) | [Clone/Download](https://gitee.com/izory/ZrAdminNetCore) |
+| Vue3(Hot)  | [Clone/Download](https://github.com/izhaorui/ZR.Admin.Vue3)          | [Clone/Download](https://gitee.com/izory/ZRAdmin-vue)    |
+| mobile     | [contact author](http://www.izhaorui.cn/vip/)                        | [contact author](http://www.izhaorui.cn/vip/)            |
 
 ## 🍁 Front-end technology
 
@@ -162,6 +161,10 @@ Vue Front-end technology stack: Based on Vue2.x/Vue3.x/UniApp, Vue, Vue-router, 
 	<tr>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/21.png"/></td>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/22.png"/></td>
+	</tr>
+		<tr>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/29.png"/></td>
+		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/30.png"/></td>
 	</tr>
 	<tr>
 		<td><img src="https://gitee.com/izory/ZrAdminNetCore/raw/master/document/images/23.png"/></td>
