@@ -68,8 +68,8 @@ namespace ZR.Admin.WebApi.Controllers
             if (ip.IsEmpty()) return ToResponse(ResultCode.CUSTOM_ERROR, "IP异常");
 
             var region = IpTool.GetRegion(ip);
-
-            return SUCCESS(region);
+            var ipInfo = IpTool.Search(ip);
+            return SUCCESS(new { region, ipInfo });
         }
 
         /// <summary>

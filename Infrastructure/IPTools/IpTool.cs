@@ -1,39 +1,36 @@
-﻿using IP2Region.Net.XDB;
+﻿using IP2Region.Net.Abstractions;
 using System;
-using System.IO;
 using ZR.Infrastructure.IPTools.Model;
 
 namespace ZR.Infrastructure.IPTools
 {
     public class IpTool
     {
-        private static readonly string DbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ip2region.xdb");
-        private static readonly Searcher Searcher;
-        static IpTool()
-        {
-            if (!File.Exists(DbPath))
-            {
-                throw new Exception($"IP initialize failed. Can not find database file from {DbPath}. Please download the file to your application root directory, then set it can be copied to the output directory. Url: https://gitee.com/lionsoul/ip2region/blob/master/data/ip2region.xdb");
-            }
+        private static ISearcher? _searcher;
 
-            Searcher = new Searcher(CachePolicy.File, DbPath);
+        public static void Configure(ISearcher searcher)
+        {
+            _searcher = searcher ?? throw new ArgumentNullException(nameof(searcher));
+        }
+
+        private static ISearcher GetSearcher()
+        {
+            return _searcher ?? throw new InvalidOperationException("IpTool is not initialized. Please configure it in Program.cs by calling IpTool.Configure(...).");
         }
 
         public static string GetRegion(string ip)
         {
-            if (string.IsNullOrEmpty(ip))
+            if (string.IsNullOrWhiteSpace(ip))
             {
                 throw new ArgumentException("IP为空", nameof(ip));
             }
 
             try
             {
-                var region = Searcher.Search(ip);
-                return region;
+                return GetSearcher().Search(ip);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
                 throw new Exception($"搜索IP异常IP={ip}", ex);
             }
         }
@@ -43,16 +40,16 @@ namespace ZR.Infrastructure.IPTools
             try
             {
                 var region = GetRegion(ip);
-                var array = region.Split("|");
-                var info = new IpInfo()
+                var array = region.Split('|');
+
+                return new IpInfo
                 {
-                    Country = array[0],
-                    Province = array[2],
-                    City = array[3],
-                    NetworkOperator = array[4],
+                    Country = array.Length > 0 ? array[0] : string.Empty,
+                    Province = array.Length > 1 ? array[1] : string.Empty,
+                    City = array.Length > 2 ? array[2] : string.Empty,
+                    NetworkOperator = array.Length > 3 ? array[3] : string.Empty,
                     IpAddress = ip
                 };
-                return info;
             }
             catch (Exception e)
             {

@@ -1,5 +1,7 @@
 using AspNetCoreRateLimit;
 using Infrastructure.Converter;
+using IP2Region.Net.Abstractions;
+using IP2Region.Net.XDB;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using NLog.Web;
@@ -9,6 +11,7 @@ using System.Text.Json;
 using ZR.Admin.WebApi.Extensions;
 using ZR.Common.Cache;
 using ZR.Common.DynamicApiSimple.Extens;
+using ZR.Infrastructure.IPTools;
 using ZR.Infrastructure.WebExtensions;
 using ZR.ServiceCore.Signalr;
 using ZR.ServiceCore.SqlSugar;
@@ -27,6 +30,10 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+var ip2RegionDbPath = Path.Combine(builder.Environment.ContentRootPath, "ip2region_v4.xdb");
+builder.Services.AddIP2RegionService(ip2RegionDbPath, cachePolicy: CachePolicy.Content);
+
 //注入HttpContextAccessor
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 // 跨域配置
@@ -36,6 +43,8 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "DataProtection"));
 //普通验证码
 builder.Services.AddCaptcha(builder.Configuration);
+// 读取额外配置文件（iprate.json 要在注册限流服务之前加载）
+builder.Configuration.AddJsonFile("iprate.json");
 //IPRatelimit
 builder.Services.AddIPRate(builder.Configuration);
 //builder.Services.AddSession();
@@ -43,7 +52,6 @@ builder.Services.AddHttpContextAccessor();
 //绑定整个对象到Model上
 builder.Services.Configure<OptionsSetting>(builder.Configuration);
 builder.Configuration.AddJsonFile("codeGen.json");
-builder.Configuration.AddJsonFile("iprate.json");
 //jwt 认证
 builder.Services.AddJwt();
 //配置文件
@@ -94,6 +102,7 @@ var app = builder.Build();
 InternalApp.ServiceProvider = app.Services;
 InternalApp.Configuration = builder.Configuration;
 InternalApp.WebHostEnvironment = app.Environment;
+IpTool.Configure(app.Services.GetRequiredKeyedService<ISearcher>("IP2Region.Net"));
 //初始化db
 builder.Services.AddDb(app.Environment);
 builder.Services.InitDb(app.Environment);
