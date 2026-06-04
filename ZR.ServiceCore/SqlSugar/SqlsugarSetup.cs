@@ -81,7 +81,7 @@ namespace ZR.ServiceCore.SqlSugar
             {
                 if (showDbLog)
                 {
-                    string log = $"【db{configId} SQL】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
+                    string log = $"【config={configId}】{UtilMethods.GetSqlString(config.DbType, sql, pars)}\n";
                     if (sql.TrimStart().StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
                     {
                         logger.Info(log);
@@ -96,7 +96,7 @@ namespace ZR.ServiceCore.SqlSugar
                     }
                     else
                     {
-                        log = $"【db{configId} SQL语句】dbo.{sql} {string.Join(", ", pars.Select(x => x.ParameterName + " = " + GetParsValue(x)))};\n";
+                        log = $"【config={configId}】dbo.{sql} {string.Join(", ", pars.Select(x => x.ParameterName + " = " + GetParsValue(x)))};\n";
                         logger.Info(log);
                     }
                 }

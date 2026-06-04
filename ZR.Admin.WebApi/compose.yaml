@@ -1,0 +1,14 @@
+services:
+  zradmin:
+    image: zradmin-webapi:latest
+    container_name: zradmin-webapi
+    ports:
+      - "1888:8888"
+    volumes:
+      - /data/zradmin/DataProtection:/app/DataProtection
+      - /data/zradmin/logs:/app/logs
+      - /data/zradmin/wwwroot/uploads:/app/wwwroot/uploads
+      - /data/zradmin/wwwroot/export:/app/wwwroot/export
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    restart: unless-stopped

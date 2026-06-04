@@ -126,6 +126,11 @@ namespace ZR.Admin.WebApi.Controllers
                     {
                         uploadDto.FileDir = OptionsSetting.Upload.LocalSavePath;
                     }
+                    var isDocker = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") ?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+                    if (uploadDto.FileDir.IsEmpty() && isDocker)
+                    {
+                        uploadDto.FileDir = "uploads";
+                    }
                     sysfile = await SysFileService.SaveFileToLocal(savePath, uploadDto, HttpContext.GetName(), formFile);
                     break;
                 case StoreType.REMOTE:

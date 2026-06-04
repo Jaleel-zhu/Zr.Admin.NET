@@ -50,7 +50,7 @@ namespace ZR.ServiceCore.Middleware
                 {
                     var sysPermissionService = App.GetService<ISysPermissionService>();
                     perms = sysPermissionService.GetMenuPermission(new SysUserDto() { UserId = userId });
-                    logger.Info("从数据库读取权限");
+                    //logger.Info("从数据库读取权限");
                     CacheService.SetUserPerms(GlobalConstant.UserPermKEY + userId, perms);
                 }
                 info.Permissions = perms;

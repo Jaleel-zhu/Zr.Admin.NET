@@ -32,7 +32,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="ip2region.xdb">
+		<None Update="ip2region_v4.xdb">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 		<Content Update="wwwroot\Generatecode\**\*">

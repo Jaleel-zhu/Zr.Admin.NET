@@ -47,25 +47,39 @@ namespace ZR.ServiceCore.Services
         {
             var fileName = dto.FileName;
             var fileDir = dto.FileDir;
-            string fileExt = Path.GetExtension(formFile.FileName);
-            fileName = (fileName.IsEmpty() ? HashFileName() : fileName) + fileExt;
+            string fileExt = Path.GetExtension(formFile.FileName).ToLowerInvariant();
+
+            var imageExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
+            bool isImageByExtension = imageExtensions.Contains(fileExt);
+
+            var quality = Math.Clamp(dto.Quality, 1, 100);
+            bool needCompress = dto.Quality > 0 && isImageByExtension;
+
+            if (needCompress && fileExt != ".jpg" && fileExt != ".jpeg")
+            {
+                fileExt = ".jpg";
+            }
+
+            fileName = (fileName.IsEmpty() ? HashFileName() : Path.GetFileNameWithoutExtension(fileName)) + fileExt;
 
             string filePath = GetdirPath(fileDir);
-            string finalFilePath = Path.Combine(rootPath, filePath, fileName);
-            double fileSize = Math.Round(formFile.Length / 1024.0, 2);
+            var rootFullPath = Path.GetFullPath(rootPath);
+            string finalFilePath = Path.GetFullPath(Path.Combine(rootFullPath, filePath, fileName));
 
-            if (!Directory.Exists(Path.GetDirectoryName(finalFilePath)))
+            if (!finalFilePath.StartsWith(rootFullPath, StringComparison.OrdinalIgnoreCase))
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(finalFilePath));
+                throw new ArgumentException("非法文件路径");
             }
-            // 常见的图片扩展名
-            var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
 
-            // 检查扩展名是否在图片扩展名列表中
-            bool isImageByExtension = imageExtensions.Contains(fileExt);
-            if (dto.Quality > 0 && isImageByExtension)
+            var directoryPath = Path.GetDirectoryName(finalFilePath);
+            if (!string.IsNullOrEmpty(directoryPath) && !Directory.Exists(directoryPath))
             {
-                await SaveCompressedImageAsync(formFile, finalFilePath);
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            if (needCompress)
+            {
+                await SaveCompressedImageAsync(formFile, finalFilePath, quality);
             }
             else
             {
@@ -74,9 +88,12 @@ namespace ZR.ServiceCore.Services
                     await formFile.CopyToAsync(stream);
                 }
             }
+
+            double fileSize = Math.Round(new FileInfo(finalFilePath).Length / 1024.0, 2);
+
             string uploadUrl = OptionsSetting.Upload.UploadUrl;
-            string accessPath = string.Concat(filePath.Replace("\\", "/"), "/", fileName);
-            Uri baseUri = new(uploadUrl);
+            string accessPath = string.Concat(filePath.Replace("\\", "/"), "/", fileName).TrimStart('/');
+            Uri baseUri = new((uploadUrl ?? string.Empty).TrimEnd('/') + "/");
             Uri fullUrl = new(baseUri, accessPath);
             SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", filePath, userName)
             {
