@@ -126,7 +126,7 @@
         /// <summary>
         /// 最后运行错误信息
         /// </summary>
-        [SugarColumn(Length = 5000)]
+        [SugarColumn(Length = 4000)]
         public string LastErrorMsg { get; set; }
 
         /// <summary>

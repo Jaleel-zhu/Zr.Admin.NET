@@ -2,10 +2,11 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Infrastructure
 {
@@ -25,8 +26,10 @@ namespace Infrastructure
                 memoryMetrics.FreeRam = Math.Round(memoryMetrics.Free / 1024, 2) + "GB";
                 memoryMetrics.UsedRam = Math.Round(memoryMetrics.Used / 1024, 2) + "GB";
                 memoryMetrics.TotalRAM = Math.Round(memoryMetrics.Total / 1024, 2) + "GB";
-                memoryMetrics.RAMRate = Math.Ceiling(100 * memoryMetrics.Used / memoryMetrics.Total).ToString() + "%";
-                memoryMetrics.CPURate = Math.Ceiling(GetCPURate().ParseToDouble()) + "%";
+                memoryMetrics.RAMRate = memoryMetrics.Total > 0
+                    ? Math.Ceiling(100 * memoryMetrics.Used / memoryMetrics.Total).ToString(CultureInfo.InvariantCulture) + "%"
+                    : "0%";
+                memoryMetrics.CPURate = Math.Ceiling(GetCPURate().ParseToDouble()).ToString(CultureInfo.InvariantCulture) + "%";
                 return memoryMetrics;
             }
             catch (Exception ex)
@@ -134,8 +137,16 @@ namespace Infrastructure
             {
                 if (IsUnix())
                 {
-                    string output = ShellHelper.Bash("uptime -s").Trim();
-                    runTime = DateTimeHelper.FormatTime((DateTime.Now - output.ParseToDateTime()).TotalMilliseconds.ToString().Split('.')[0].ParseToLong());
+                    var unixRunTime = GetUnixRunTime();
+                    if (unixRunTime.HasValue)
+                    {
+                        runTime = DateTimeHelper.FormatTime(((long)unixRunTime.Value.TotalMilliseconds).ToString(CultureInfo.InvariantCulture).ParseToLong());
+                    }
+                    else
+                    {
+                        string output = ShellHelper.Bash("uptime -s").Trim();
+                        runTime = DateTimeHelper.FormatTime((DateTime.Now - output.ParseToDateTime()).TotalMilliseconds.ToString().Split('.')[0].ParseToLong());
+                    }
                 }
                 else
                 {
@@ -152,6 +163,41 @@ namespace Infrastructure
                 Console.WriteLine("获取runTime出错" + ex.Message);
             }
             return runTime;
+        }
+
+        private static TimeSpan? GetUnixRunTime()
+        {
+            try
+            {
+                using var initProcess = Process.GetProcessById(1);
+                var startTime = initProcess.StartTime;
+                var now = DateTime.Now;
+                if (startTime <= now)
+                {
+                    return now - startTime;
+                }
+            }
+            catch
+            {
+            }
+
+            try
+            {
+                if (File.Exists("/proc/uptime"))
+                {
+                    var content = File.ReadAllText("/proc/uptime").Trim();
+                    var secondsText = content.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                    if (double.TryParse(secondsText, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) && seconds >= 0)
+                    {
+                        return TimeSpan.FromSeconds(seconds);
+                    }
+                }
+            }
+            catch
+            {
+            }
+
+            return null;
         }
     }
 
@@ -210,6 +256,26 @@ namespace Infrastructure
     {
         #region 获取内存信息
 
+        private static readonly string[] CGroupV2LimitPaths =
+        {
+            "/sys/fs/cgroup/memory.max"
+        };
+
+        private static readonly string[] CGroupV2UsagePaths =
+        {
+            "/sys/fs/cgroup/memory.current"
+        };
+
+        private static readonly string[] CGroupV1LimitPaths =
+        {
+            "/sys/fs/cgroup/memory/memory.limit_in_bytes"
+        };
+
+        private static readonly string[] CGroupV1UsagePaths =
+        {
+            "/sys/fs/cgroup/memory/memory.usage_in_bytes"
+        };
+
         /// <summary>
         /// windows系统获取内存信息
         /// </summary>
@@ -238,23 +304,152 @@ namespace Infrastructure
         /// <returns></returns>
         public MemoryMetrics GetUnixMetrics()
         {
-            string output = ShellHelper.Bash("free -m | awk '{print $2,$3,$4,$5,$6}'");
-            var metrics = new MemoryMetrics();
-            var lines = output.Split('\n', (char)StringSplitOptions.RemoveEmptyEntries);
+            var metrics = GetUnixMetricsFromCGroup();
+            if (metrics != null)
+            {
+                return metrics;
+            }
+
+            string output = ShellHelper.Bash("free -m");
+            metrics = new MemoryMetrics();
+            var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
             if (lines.Length <= 0) return metrics;
 
-            if (lines != null && lines.Length > 0)
+            var memLine = lines.FirstOrDefault(x => x.TrimStart().StartsWith("Mem:", StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(memLine))
             {
-                var memory = lines[1].Split(' ', (char)StringSplitOptions.RemoveEmptyEntries);
-                if (memory.Length >= 3)
+                var memory = memLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (memory.Length >= 4)
                 {
-                    metrics.Total = double.Parse(memory[0]);
-                    metrics.Used = double.Parse(memory[1]);
-                    metrics.Free = double.Parse(memory[2]);//m
+                    if (double.TryParse(memory[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var total))
+                    {
+                        metrics.Total = total;
+                    }
+
+                    if (double.TryParse(memory[2], NumberStyles.Float, CultureInfo.InvariantCulture, out var used))
+                    {
+                        metrics.Used = used;
+                    }
+
+                    if (double.TryParse(memory[3], NumberStyles.Float, CultureInfo.InvariantCulture, out var free))
+                    {
+                        metrics.Free = free;
+                    }
+
+                    if (metrics.Total > 0 && metrics.Used <= 0 && metrics.Free > 0)
+                    {
+                        metrics.Used = Math.Max(metrics.Total - metrics.Free, 0);
+                    }
+
+                    return metrics;
                 }
             }
+
+            var firstDataLine = lines.FirstOrDefault(x =>
+            {
+                var cols = x.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                return cols.Length >= 3 &&
+                       double.TryParse(cols[0], NumberStyles.Float, CultureInfo.InvariantCulture, out _);
+            });
+
+            if (!string.IsNullOrWhiteSpace(firstDataLine))
+            {
+                var memory = firstDataLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (memory.Length >= 3)
+                {
+                    if (double.TryParse(memory[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var total))
+                    {
+                        metrics.Total = total;
+                    }
+
+                    if (double.TryParse(memory[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var used))
+                    {
+                        metrics.Used = used;
+                    }
+
+                    if (double.TryParse(memory[2], NumberStyles.Float, CultureInfo.InvariantCulture, out var free))
+                    {
+                        metrics.Free = free;
+                    }
+                }
+            }
+
             return metrics;
+        }
+
+        private static MemoryMetrics GetUnixMetricsFromCGroup()
+        {
+            long totalBytes = TryReadCGroupBytes(CGroupV2LimitPaths);
+            long usedBytes = TryReadCGroupBytes(CGroupV2UsagePaths);
+
+            if (totalBytes <= 0 || usedBytes < 0)
+            {
+                totalBytes = TryReadCGroupBytes(CGroupV1LimitPaths);
+                usedBytes = TryReadCGroupBytes(CGroupV1UsagePaths);
+            }
+
+            if (!IsValidCGroupLimit(totalBytes) || usedBytes < 0)
+            {
+                return null;
+            }
+
+            if (usedBytes > totalBytes)
+            {
+                usedBytes = totalBytes;
+            }
+
+            var totalMb = totalBytes / 1024d / 1024d;
+            var usedMb = usedBytes / 1024d / 1024d;
+            var freeMb = Math.Max(totalMb - usedMb, 0d);
+
+            return new MemoryMetrics
+            {
+                Total = Math.Round(totalMb, 0),
+                Used = Math.Round(usedMb, 0),
+                Free = Math.Round(freeMb, 0)
+            };
+        }
+
+        private static long TryReadCGroupBytes(IEnumerable<string> paths)
+        {
+            foreach (var path in paths)
+            {
+                if (!File.Exists(path))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var text = File.ReadAllText(path).Trim();
+                    if (string.IsNullOrWhiteSpace(text) || string.Equals(text, "max", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return -1;
+                    }
+
+                    if (long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
+                    {
+                        return value;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            return -1;
+        }
+
+        private static bool IsValidCGroupLimit(long totalBytes)
+        {
+            if (totalBytes <= 0)
+            {
+                return false;
+            }
+
+            const long onePb = 1024L * 1024L * 1024L * 1024L * 1024L;
+            return totalBytes < onePb;
         }
         #endregion
     }
