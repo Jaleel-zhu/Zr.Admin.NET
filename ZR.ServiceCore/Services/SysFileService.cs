@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Processing.Processors.Quantization;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -28,6 +31,12 @@ namespace ZR.ServiceCore.Services
         private string domainUrl = AppSettings.GetConfig("ALIYUN_OSS:domainUrl");
         private readonly ISysConfigService SysConfigService;
         private OptionsSetting OptionsSetting;
+
+        private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg", ".jpeg", ".png", ".gif", ".bmp"
+        };
+
         public SysFileService(ISysConfigService sysConfigService, IOptions<OptionsSetting> options)
         {
             SysConfigService = sysConfigService;
@@ -45,56 +54,32 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public async Task<SysFile> SaveFileToLocal(string rootPath, UploadDto dto, string userName, string clasifyType, IFormFile formFile)
         {
-            var fileName = dto.FileName;
             var fileDir = dto.FileDir;
-            string fileExt = Path.GetExtension(formFile.FileName).ToLowerInvariant();
-
-            var imageExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
-            bool isImageByExtension = imageExtensions.Contains(fileExt);
-
-            var quality = Math.Clamp(dto.Quality, 1, 100);
-            bool needCompress = dto.Quality > 0 && isImageByExtension;
-
-            if (needCompress && fileExt != ".jpg" && fileExt != ".jpeg")
-            {
-                fileExt = ".jpg";
-            }
-
-            fileName = (fileName.IsEmpty() ? HashFileName() : Path.GetFileNameWithoutExtension(fileName)) + fileExt;
+            string fileExt = Path.GetExtension(formFile.FileName);
+            string fileName = BuildFileName(dto.FileName, fileExt);
 
             string filePath = GetdirPath(fileDir);
-            var rootFullPath = Path.GetFullPath(rootPath);
-            string finalFilePath = Path.GetFullPath(Path.Combine(rootFullPath, filePath, fileName));
+            string finalFilePath = Path.Combine(rootPath, filePath, fileName);
+            double fileSize = Math.Round(formFile.Length / 1024.0, 2);
 
-            if (!finalFilePath.StartsWith(rootFullPath, StringComparison.OrdinalIgnoreCase))
+            var targetDir = Path.GetDirectoryName(finalFilePath);
+            if (!string.IsNullOrWhiteSpace(targetDir) && !Directory.Exists(targetDir))
             {
-                throw new ArgumentException("非法文件路径");
+                Directory.CreateDirectory(targetDir);
             }
 
-            var directoryPath = Path.GetDirectoryName(finalFilePath);
-            if (!string.IsNullOrEmpty(directoryPath) && !Directory.Exists(directoryPath))
+            await using (var uploadStream = await CreateUploadStreamAsync(formFile, dto.Quality, fileExt))
+            await using (var fileStream = new FileStream(finalFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                Directory.CreateDirectory(directoryPath);
+                fileSize = Math.Round(uploadStream.Length / 1024.0, 2); // 更新文件大小为压缩后的大小
+                await uploadStream.CopyToAsync(fileStream);
             }
-
-            if (needCompress)
-            {
-                await SaveCompressedImageAsync(formFile, finalFilePath, quality);
-            }
-            else
-            {
-                using (var stream = new FileStream(finalFilePath, FileMode.Create))
-                {
-                    await formFile.CopyToAsync(stream);
-                }
-            }
-
-            double fileSize = Math.Round(new FileInfo(finalFilePath).Length / 1024.0, 2);
 
             string uploadUrl = OptionsSetting.Upload.UploadUrl;
-            string accessPath = string.Concat(filePath.Replace("\\", "/"), "/", fileName).TrimStart('/');
-            Uri baseUri = new((uploadUrl ?? string.Empty).TrimEnd('/') + "/");
+            string accessPath = string.Concat(filePath.Replace("\\", "/"), "/", fileName);
+            Uri baseUri = new(uploadUrl);
             Uri fullUrl = new(baseUri, accessPath);
+
             SysFile file = new(formFile.FileName, fileName, fileExt, fileSize + "kb", filePath, userName)
             {
                 StoreType = (int)StoreType.LOCAL,
@@ -104,6 +89,7 @@ namespace ZR.ServiceCore.Services
                 ClassifyType = clasifyType,
                 CategoryId = dto.CategoryId,
             };
+
             file.Id = await InsertFile(file);
             return file;
         }
@@ -124,27 +110,23 @@ namespace ZR.ServiceCore.Services
         /// <returns></returns>
         public async Task<SysFile> SaveFileToAliyun(SysFile file, UploadDto dto, IFormFile formFile)
         {
-            file.FileName = (file.FileName.IsEmpty() ? HashFileName() : file.FileName) + file.FileExt;
+            string fileExt = string.IsNullOrWhiteSpace(file.FileExt) ? Path.GetExtension(formFile.FileName) : file.FileExt;
+            file.FileExt = fileExt;
+            file.FileName = BuildFileName(file.FileName, fileExt);
             file.StorePath = GetdirPath(file.StorePath);
-            string finalPath = Path.Combine(file.StorePath, file.FileName);
+
+            string finalPath = CombineOssPath(file.StorePath, file.FileName);
             HttpStatusCode statusCode;
-            if (dto.Quality > 0)
+
+            await using (var uploadStream = await CreateUploadStreamAsync(formFile, dto.Quality, fileExt))
             {
-                // 压缩图片
-                using var stream = new MemoryStream();
-                await CompressImageAsync(formFile, stream, dto.Quality);
-                stream.Position = 0;
-                statusCode = AliyunOssHelper.PutObjectFromFile(stream, finalPath, "");
+                statusCode = AliyunOssHelper.PutObjectFromFile(uploadStream, finalPath, "");
             }
-            else
-            {
-                statusCode = AliyunOssHelper.PutObjectFromFile(formFile.OpenReadStream(), finalPath, "");
-            }
+
             if (statusCode != HttpStatusCode.OK) return file;
 
-            file.StorePath = file.StorePath;
             file.FileUrl = finalPath;
-            file.AccessUrl = string.Concat(domainUrl, "/", file.StorePath.Replace("\\", "/"), "/", file.FileName);
+            file.AccessUrl = CombineUrl(domainUrl, finalPath);
             file.Id = await InsertFile(file);
 
             return file;
@@ -178,9 +160,9 @@ namespace ZR.ServiceCore.Services
             return BitConverter.ToString(MD5.HashData(Encoding.Default.GetBytes(str)), 4, 8).Replace("-", "").ToLower();
         }
 
-        public Task<long> InsertFile(SysFile file)
+        public async Task<long> InsertFile(SysFile file)
         {
-            return Insertable(file).ExecuteReturnSnowflakeIdAsync();//单条插入返回雪花ID;
+            return await Insertable(file).ExecuteReturnSnowflakeIdAsync();//单条插入返回雪花ID;
         }
 
         /// <summary>
@@ -222,14 +204,96 @@ namespace ZR.ServiceCore.Services
         }
         private async Task CompressImageAsync(IFormFile file, Stream outputStream, int quality)
         {
-            // 加载图片
             using var image = await Image.LoadAsync(file.OpenReadStream());
 
-            // 设置 JPEG 编码器并指定质量
-            var encoder = new JpegEncoder { Quality = quality };
+            var ext = Path.GetExtension(file.FileName).ToLower();
 
-            // 保存压缩后的图片到输出流
-            await image.SaveAsync(outputStream, encoder);
+            switch (ext)
+            {
+                case ".jpg":
+                case ".jpeg":
+                    await image.SaveAsJpegAsync(outputStream,
+                        new JpegEncoder
+                        {
+                            Quality = quality
+                        });
+                    break;
+
+                case ".png":
+                    image.Metadata.ExifProfile = null;
+
+                    image.Mutate(x =>
+                    {
+                        x.Quantize(new WuQuantizer(new QuantizerOptions
+                        {
+                            MaxColors = 128//画质最好 体积稍大, 256/ 64/ 32/ 16/ 8/ 4/ 2
+                        }));
+                    });
+
+                    await image.SaveAsPngAsync(
+                        outputStream,
+                        new PngEncoder
+                        {
+                            CompressionLevel = PngCompressionLevel.BestCompression,
+                            ColorType = PngColorType.Palette
+                        });
+
+                    break;
+
+                default:
+                    await image.SaveAsync(outputStream,
+                        image.Metadata.DecodedImageFormat);
+                    break;
+            }
+        }
+
+        private string BuildFileName(string sourceName, string fileExt)
+        {
+            var finalName = sourceName.IsEmpty() ? HashFileName() : sourceName;
+
+            if (!string.IsNullOrWhiteSpace(fileExt) &&
+                finalName.EndsWith(fileExt, StringComparison.OrdinalIgnoreCase))
+            {
+                return finalName;
+            }
+
+            return string.Concat(finalName, fileExt);
+        }
+
+        private async Task<Stream> CreateUploadStreamAsync(IFormFile formFile, int quality, string fileExt)
+        {
+            if (quality > 0 && IsImageExtension(fileExt))
+            {
+                var compressedStream = new MemoryStream();
+                await CompressImageAsync(formFile, compressedStream, Math.Clamp(quality, 1, 100));
+                compressedStream.Position = 0;
+                return compressedStream;
+            }
+
+            return formFile.OpenReadStream();
+        }
+
+        private static bool IsImageExtension(string fileExt)
+        {
+            return !string.IsNullOrWhiteSpace(fileExt) && ImageExtensions.Contains(fileExt);
+        }
+
+        private static string CombineOssPath(params string[] segments)
+        {
+            return string.Join("/",
+                segments
+                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                    .Select(s => s.Trim().Trim('/', '\\')));
+        }
+
+        private static string CombineUrl(string baseUrl, string relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                return relativePath.Replace("\\", "/");
+            }
+
+            return $"{baseUrl.TrimEnd('/')}/{relativePath.TrimStart('/').Replace("\\", "/")}";
         }
 
         public PagedInfo<SysFileDto> GetSysFiles(SysFileQueryDto parm)
